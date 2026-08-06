@@ -1,0 +1,46 @@
+#!/bin/bash
+# Starship custom module: git status als Text
+# Ausgabe: ❨2 staged, 1 modified, 3 ahead❩
+
+git rev-parse --is-inside-work-tree &>/dev/null || exit 0
+
+staged=0 modified=0 untracked=0 deleted=0 renamed=0 conflicted=0
+
+while IFS= read -r line; do
+    xy="${line:0:2}"
+    x="${xy:0:1}"; y="${xy:1:1}"
+    # Untracked / ignored
+    [[ "$x$y" = "??" || "$x$y" = "!!" ]] && { ((untracked++)); continue; }
+    # Conflicted
+    [[ "$x" = "u" || "$y" = "u" || "$x" = "U" || "$y" = "U" ]] && { ((conflicted++)); continue; }
+    # Staged (index)
+    case "$x" in M|A|D|R|C) ((staged++)) ;; esac
+    # Modified / deleted (worktree)
+    case "$y" in M) ((modified++)) ;; D) ((deleted++)) ;; esac
+    # Renamed
+    case "$x" in R|C) ((renamed++)) ;; esac
+done < <(git status --porcelain 2>/dev/null)
+
+# Ahead / behind
+ahead=0 behind=0
+ab=$(git rev-list --left-right --count @{upstream}...HEAD 2>/dev/null) && {
+    behind=$(echo "$ab" | awk '{print $1}')
+    ahead=$(echo "$ab" | awk '{print $2}')
+}
+
+parts=()
+((staged))    && parts+=("$staged staged")
+((modified))  && parts+=("$modified modified")
+((untracked)) && parts+=("$untracked untracked")
+((deleted))   && parts+=("$deleted deleted")
+((renamed))   && parts+=("$renamed renamed")
+((conflicted)) && parts+=("$conflicted conflicts")
+((ahead))     && parts+=("$ahead ahead")
+((behind))    && parts+=("$behind behind")
+
+if (( ${#parts[@]} )); then
+    IFS=', '
+    echo "❨${parts[*]}❩"
+else
+    exit 1
+fi

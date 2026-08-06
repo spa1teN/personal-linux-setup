@@ -41,6 +41,7 @@ ITEMS=(
   "bashrc|dotfiles/.bashrc|.bashrc|copy"
   "bash_aliases|dotfiles/.bash_aliases.template|.bash_aliases|render"
   "starship|dotfiles/.config/starship.toml::dotfiles/.config/starship-local.toml|.config/starship.toml::.config/starship-local.toml|multi"
+  "git-prompt|dotfiles/.local/bin/git-prompt-section::dotfiles/.local/bin/git-status-prompt|.local/bin/git-prompt-section::.local/bin/git-status-prompt|multi"
   "claude-settings|dotfiles/.claude/settings.json::dotfiles/.claude/settings.local.json|.claude/settings.json::.claude/settings.local.json|multi"
   "claude-statusline|dotfiles/.claude/scripts/ds-statusline.sh|.claude/scripts/ds-statusline.sh|copy"
   "claude-plugins|dotfiles/.claude/plugins/installed_plugins.json|.claude/plugins/installed_plugins.json|copy"
@@ -93,6 +94,7 @@ Configs (colored = supports --enable/--disable):
   bashrc                   Bash config (Starship, NVM, fzf, ble.sh)
   bash_aliases             Bash aliases with secrets (rendered, mode 600)
   starship                 Starship prompt configs (SSH + local)
+  git-prompt                Git status in prompt (starship dependency)
   claude-settings          Claude Code settings + settings.local
   claude-statusline        Claude Code status line script
   claude-plugins           Claude Code installed plugins

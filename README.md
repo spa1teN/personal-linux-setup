@@ -41,6 +41,7 @@ Use `--uninstall` to remove configs and restore backups.
 | `bashrc` | `~/.bashrc` | copy |
 | `bash_aliases` | `~/.bash_aliases` | **rendered** (mode 600) |
 | `starship` | `~/.config/starship.toml` + `starship-local.toml` | copy (both) |
+| `git-prompt` | `~/.local/bin/git-prompt-section` + `git-status-prompt` | copy (both) |
 | `claude-settings` | `~/.claude/settings.json` + `settings.local.json` | copy (both) |
 | `claude-statusline` | `~/.claude/scripts/ds-statusline.sh` | copy |
 | `claude-plugins` | `~/.claude/plugins/installed_plugins.json` | copy |

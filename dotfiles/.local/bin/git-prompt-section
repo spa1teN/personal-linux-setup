@@ -1,0 +1,81 @@
+#!/bin/bash
+# Starship custom module: Git-Sektion mit Powerline-Chevrons
+# Raw-ANSI für dir→branch→status→right_cap
+
+# ── Dark Background Colors ────────────────────────────────────────────
+purple_bg='\033[48;2;92;45;107m'    # #5C2D6B
+peach_bg='\033[48;2;107;66;38m'     # #6B4226
+blue_bg='\033[48;2;45;95;107m'      # #2D5F6B
+teal_bg='\033[48;2;26;74;74m'       # #1A4A4A
+
+peach_fg='\033[38;2;107;66;38m'
+blue_fg='\033[38;2;45;95;107m'
+teal_fg='\033[38;2;26;74;74m'
+
+# ── Text Colors ───────────────────────────────────────────────────────
+bold='\033[1m'
+white='\033[37m'
+gold='\033[38;2;255;179;71m'
+red='\033[38;2;255;107;107m'
+yellow='\033[33m'
+reset='\033[0m'
+
+# ── Git-State ─────────────────────────────────────────────────────────
+get_git_state() {
+    local d=".git"
+    [[ ! -d "$d" ]] && return 1
+    if [[ -d "$d/rebase-merge" || -d "$d/rebase-apply" ]]; then
+        local done=0 total=0
+        if [[ -f "$d/rebase-merge/msgnum" && -f "$d/rebase-merge/end" ]]; then
+            done=$(cat "$d/rebase-merge/msgnum" 2>/dev/null)
+            total=$(cat "$d/rebase-merge/end" 2>/dev/null)
+        fi
+        (( total > 0 )) && echo "REBASE $done/$total" || echo "REBASE"
+        return 0
+    elif [[ -f "$d/MERGE_HEAD" ]]; then echo "MERGE"; return 0
+    elif [[ -f "$d/CHERRY_PICK_HEAD" ]]; then echo "CHERRY-PICK"; return 0
+    elif [[ -f "$d/BISECT_LOG" ]]; then echo "BISECT"; return 0
+    elif [[ -f "$d/REVERT_HEAD" ]]; then echo "REVERT"; return 0
+    fi
+    return 1
+}
+
+get_branch() {
+    local b
+    b=$(git branch --show-current 2>/dev/null) && [[ -n "$b" ]] && echo "$b" && return 0
+    b=$(git rev-parse --short HEAD 2>/dev/null) && echo ":$b" && return 0
+    return 1
+}
+
+# ── Main ──────────────────────────────────────────────────────────────
+
+if ! git rev-parse --is-inside-work-tree &>/dev/null; then
+    echo -ne "${reset}${peach_fg} ${reset}"
+    exit 0
+fi
+
+# ── In Git Repo ───────────────────────────────────────────────────────
+
+# Dir→branch chevron
+echo -ne "${blue_bg}${peach_fg}"
+
+# " on branch " white, branch name gold
+branch=$(get_branch)
+echo -ne "${bold}${white} on branch ${gold}${branch} "
+
+# Git-State (rebasing etc)
+state=$(get_git_state)
+if [[ -n "$state" ]]; then
+    echo -ne "${bold}${yellow}${state} "
+fi
+
+# Status or right cap
+if status=$(~/.local/bin/git-status-prompt 2>/dev/null); then
+    echo -ne "${teal_bg}${blue_fg}"
+    echo -ne "${bold}${red} ${status}"
+    echo -ne "${reset}${teal_fg} ${reset}"
+else
+    echo -ne "${reset}${blue_fg} ${reset}"
+fi
+
+exit 0
