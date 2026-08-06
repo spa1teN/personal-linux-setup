@@ -1,0 +1,67 @@
+#!/bin/bash
+# Segment 5 — Git status  (bg: #89bfdc sky blue)
+#
+# Replaces text labels with symbols: + ~ ? - » ! ↑ ↓
+# Always outputs: content + (→lavender)
+
+# ── Colors ───────────────────────────────────────────────────────────────
+c5_bg='\033[48;2;137;191;220m'   # segment 5 bg  #89bfdc
+c6_bg='\033[48;2;189;186;241m'   # segment 6 bg  #bdbaf1
+c5_fg='\033[38;2;137;191;220m'   # segment 5 fg (for chevron)
+status_fg='\033[38;2;20;55;85m\033[1m'    # bold dark navy
+
+# ── Status symbols ───────────────────────────────────────────────────────
+declare -A sym=(
+    [staged]='+'
+    [modified]='~'
+    [untracked]='?'
+    [deleted]='-'
+    [renamed]='»'
+    [conflicted]='!'
+    [ahead]='↑'
+    [behind]='↓'
+)
+
+# ── Git status ───────────────────────────────────────────────────────────
+git rev-parse --is-inside-work-tree &>/dev/null || {
+    printf '%b' "${c5_bg} ${c6_bg}${c5_fg}"
+    exit 0
+}
+
+staged=0 modified=0 untracked=0 deleted=0 renamed=0 conflicted=0
+
+while IFS= read -r line; do
+    xy="${line:0:2}"
+    x="${xy:0:1}"; y="${xy:1:1}"
+    [[ "$x$y" = "??" || "$x$y" = "!!" ]] && { ((untracked++)); continue; }
+    [[ "$x" = "u" || "$y" = "u" || "$x" = "U" || "$y" = "U" ]] && { ((conflicted++)); continue; }
+    case "$x" in M|A|D|R|C) ((staged++)) ;; esac
+    case "$y" in M) ((modified++)) ;; D) ((deleted++)) ;; esac
+    case "$x" in R|C) ((renamed++)) ;; esac
+done < <(git status --porcelain 2>/dev/null)
+
+ahead=0 behind=0
+ab=$(git rev-list --left-right --count @{upstream}...HEAD 2>/dev/null) && {
+    behind=$(echo "$ab" | awk '{print $1}')
+    ahead=$(echo "$ab" | awk '{print $2}')
+}
+
+parts=()
+((staged))    && parts+=("$staged${sym[staged]}")
+((modified))  && parts+=("$modified${sym[modified]}")
+((untracked)) && parts+=("$untracked${sym[untracked]}")
+((deleted))   && parts+=("$deleted${sym[deleted]}")
+((renamed))   && parts+=("$renamed${sym[renamed]}")
+((conflicted)) && parts+=("$conflicted${sym[conflicted]}")
+((ahead))     && parts+=("$ahead${sym[ahead]}")
+((behind))    && parts+=("$behind${sym[behind]}")
+
+# ── Output ────────────────────────────────────────────────────────────────
+printf '%b' "${c5_bg}"
+if (( ${#parts[@]} )); then
+    IFS=' '
+    printf '%b' "${status_fg} ❨${parts[*]}❩ "
+else
+    printf '%b' ' '  # clean repo — slim band
+fi
+printf '%b' "${c6_bg}${c5_fg}"

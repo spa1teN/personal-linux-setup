@@ -1,34 +1,79 @@
-# Starship Prompt — Pastel Powerline (SSH-Modus)
-# User+Host sichtbar, echte Powerline-Chevrons
+# Starship Prompt — Rainbow Powerline (6 segments)
+#
+# Seg 1  pink    #e88489   Username · OS logo · Hostname
+# Seg 2  peach   #ef9f7a   Directory path  (prefix "in" on SSH)
+# Seg 3  gold    #e3c991   GitHub logo + user
+# Seg 4  green   #a9d48e   Git branch + release tag
+# Seg 5  blue    #89bfdc   Git status
+# Seg 6  purple  #bdbaf1   Active environments
 
-format = "[](fg:#5C2D6B)$username[@](bg:#5C2D6B bold white)$hostname[](bg:#6B4226 fg:#5C2D6B)[ in](bg:#6B4226 bold white)$directory$custom$line_break$character"
+format = "$custom$fill$status$time$line_break$character"
 
-[username]
-format = "[$user]($style)"
-style_user = "bg:#5C2D6B bold fg:#FF8800"
-style_root = "bg:#5C2D6B bold red"
-
-[hostname]
-format = "[$hostname ]($style)"
-style = "bg:#5C2D6B bold green"
-
-[directory]
-truncation_length = 0
-truncate_to_repo = false
-format = "[ $path ]($style)"
-style = "bg:#6B4226 bold cyan"
-
-[custom.git_section]
-command = '~/.local/bin/git-prompt-section'
+# ── Segment 1: Username · OS logo · Hostname ─────────────────────────────
+[custom.seg1_userhost]
+command = '~/.local/bin/prompt-seg1-userhost'
 when = 'true'
 shell = 'bash'
 format = '$output'
+ignore_timeout = true
 
+# ── Segment 2: Directory path ────────────────────────────────────────────
+[custom.seg2_path]
+command = '~/.local/bin/prompt-seg2-path'
+when = 'true'
+shell = 'bash'
+format = '$output'
+ignore_timeout = true
+
+# ── Segment 3: GitHub user ───────────────────────────────────────────────
+[custom.seg3_github]
+command = '~/.local/bin/prompt-seg3-github'
+when = 'true'
+shell = 'bash'
+format = '$output'
+ignore_timeout = true
+
+# ── Segment 4: Git branch + release ──────────────────────────────────────
+[custom.seg4_git]
+command = '~/.local/bin/prompt-seg4-git'
+when = 'true'
+shell = 'bash'
+format = '$output'
+ignore_timeout = true
+
+# ── Segment 5: Git status ────────────────────────────────────────────────
+[custom.seg5_gitstatus]
+command = '~/.local/bin/prompt-seg5-gitstatus'
+when = 'true'
+shell = 'bash'
+format = '$output'
+ignore_timeout = true
+
+# ── Segment 6: Environments ──────────────────────────────────────────────
+[custom.seg6_env]
+command = '~/.local/bin/prompt-seg6-env'
+when = 'true'
+shell = 'bash'
+format = '$output'
+ignore_timeout = true
+
+# ── Prompt character ─────────────────────────────────────────────────────
 [character]
 success_symbol = "[❯](bold green)"
 error_symbol = "[❯](bold red)"
 
+# ── Clock (right-aligned) ────────────────────────────────────────────────
+[time]
+disabled = false
+format = "[ $time ](fg:#888888)"
+time_format = "%H:%M"
+
+# ── Fill between prompt and clock ─────────────────────────────────────────
+[fill]
+symbol = " "
+
+# ── Exit status (right side, near clock) ─────────────────────────────────
 [status]
-format = "[ $symbol$status ]($style)"
-style = "red"
+format = "[ ✕$status ]($style)"
+style = "bold red"
 disabled = false

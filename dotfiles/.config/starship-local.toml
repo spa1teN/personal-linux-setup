@@ -1,31 +1,73 @@
-# Starship Prompt — Pastel Powerline (Lokal-Modus)
-# Kein User/Host, kein "in"
+# Starship Prompt — Rainbow Powerline (Local)
+# Same as starship.toml — the scripts handle local vs SSH internally
 
-format = "[](fg:#6B4226)$directory$custom$line_break$character"
+format = "$custom$fill$status$time$line_break$character"
 
-[username]
-disabled = true
-
-[hostname]
-disabled = true
-
-[directory]
-truncation_length = 0
-truncate_to_repo = false
-format = "[$path ]($style)"
-style = "bg:#6B4226 bold cyan"
-
-[custom.git_section]
-command = '~/.local/bin/git-prompt-section'
+# ── Segment 1: Username · OS logo · Hostname ─────────────────────────────
+[custom.seg1_userhost]
+command = '~/.local/bin/prompt-seg1-userhost'
 when = 'true'
 shell = 'bash'
 format = '$output'
+ignore_timeout = true
 
+# ── Segment 2: Directory path ────────────────────────────────────────────
+[custom.seg2_path]
+command = '~/.local/bin/prompt-seg2-path'
+when = 'true'
+shell = 'bash'
+format = '$output'
+ignore_timeout = true
+
+# ── Segment 3: GitHub user ───────────────────────────────────────────────
+[custom.seg3_github]
+command = '~/.local/bin/prompt-seg3-github'
+when = 'true'
+shell = 'bash'
+format = '$output'
+ignore_timeout = true
+
+# ── Segment 4: Git branch + release ──────────────────────────────────────
+[custom.seg4_git]
+command = '~/.local/bin/prompt-seg4-git'
+when = 'true'
+shell = 'bash'
+format = '$output'
+ignore_timeout = true
+
+# ── Segment 5: Git status ────────────────────────────────────────────────
+[custom.seg5_gitstatus]
+command = '~/.local/bin/prompt-seg5-gitstatus'
+when = 'true'
+shell = 'bash'
+format = '$output'
+ignore_timeout = true
+
+# ── Segment 6: Environments ──────────────────────────────────────────────
+[custom.seg6_env]
+command = '~/.local/bin/prompt-seg6-env'
+when = 'true'
+shell = 'bash'
+format = '$output'
+ignore_timeout = true
+
+# ── Prompt character ─────────────────────────────────────────────────────
 [character]
 success_symbol = "[❯](bold green)"
 error_symbol = "[❯](bold red)"
 
+# ── Clock (right-aligned) ────────────────────────────────────────────────
+[time]
+disabled = false
+format = "[ $time ](fg:#888888)"
+time_format = "%H:%M"
+
+# ── Fill between prompt and clock ─────────────────────────────────────────
+[fill]
+symbol = " "
+
+# ── Exit status (right side, near clock) ─────────────────────────────────
 [status]
-format = "[ $symbol$status ]($style)"
-style = "red"
+format = "[ ✕$status ]($style)"
+style = "bold red"
 disabled = false

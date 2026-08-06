@@ -1,0 +1,43 @@
+#!/bin/bash
+# Segment 3 — GitHub user  (bg: #e3c991 gold)
+#
+# Shows GitHub logo + username even outside repos when a user is configured.
+# Always outputs: content + (→green)
+
+# ── Colors ───────────────────────────────────────────────────────────────
+c3_bg='\033[48;2;227;201;145m'   # segment 3 bg  #e3c991
+c4_bg='\033[48;2;169;212;142m'   # segment 4 bg  #a9d48e
+c3_fg='\033[38;2;227;201;145m'   # segment 3 fg (for chevron)
+user_fg='\033[38;2;80;60;15m\033[1m'     # bold dark amber
+black='\033[38;2;24;24;24m\033[1m'       # near-black for logo
+gh_logo=$'\U000F02A4'                     # 󰊤 nf-md-github
+
+# ── Detect GitHub user ───────────────────────────────────────────────────
+github_user=''
+
+# 1) gh hosts.yml — local file, always fast
+if [ -z "$github_user" ] && [ -f ~/.config/gh/hosts.yml ]; then
+    github_user=$(grep -oP '^\s*user:\s*\K\S+' ~/.config/gh/hosts.yml 2>/dev/null || true)
+fi
+
+# 2) gh CLI with short timeout (fallback, works when hosts.yml is empty)
+if [ -z "$github_user" ] && command -v gh &>/dev/null; then
+    github_user=$(timeout 2 gh auth status 2>&1 | grep -oP 'Logged in to github\.com as \K\S+' 2>/dev/null || true)
+fi
+
+# 3) git global config
+if [ -z "$github_user" ] && command -v git &>/dev/null; then
+    github_user=$(git config --global user.name 2>/dev/null || true)
+fi
+
+# 4) env var
+[ -z "$github_user" ] && github_user="${GITHUB_USER:-}"
+
+# ── Output ────────────────────────────────────────────────────────────────
+printf '%b' "${c3_bg}"
+if [ -n "$github_user" ]; then
+    printf '%b' " ${black}${gh_logo} ${user_fg}${github_user} "
+else
+    printf '%b' ' '  # slim band — always visible
+fi
+printf '%b' "${c4_bg}${c3_fg}"

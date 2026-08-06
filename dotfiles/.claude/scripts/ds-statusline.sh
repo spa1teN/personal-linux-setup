@@ -12,79 +12,133 @@ dir=$(echo "$dir" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d
 home_esc=$(printf '%s' "$HOME" | sed 's/[\/&]/\\&/g')
 dir_short=$(printf '%s' "$dir" | sed "s|^$home_esc|~|")
 
-# --- Starship-style Line 1 ---
-# Replicates format from ~/.config/starship.toml with bg:#2a2d34 on the whole line
-BG='48;2;42;45;52'
+# --- Rainbow Powerline Line 1 ---
+# Six segments matching ~/.config/starship.toml
+
+# Background colors — $'...' produces actual ESC bytes, not literal \033
+C1=$'\033[48;2;232;132;137m';   C2=$'\033[48;2;239;159;122m';   C3=$'\033[48;2;227;201;145m'
+C4=$'\033[48;2;169;212;142m';   C5=$'\033[48;2;137;191;220m';   C6=$'\033[48;2;189;186;241m'
+BG=$'\033[48;2;42;45;52m'
+c1=$'\033[38;2;232;132;137m';   c2=$'\033[38;2;239;159;122m';   c3=$'\033[38;2;227;201;145m'
+c4=$'\033[38;2;169;212;142m';   c5=$'\033[38;2;137;191;220m';   c6=$'\033[38;2;189;186;241m'
+black=$'\033[38;2;24;24;24m\033[1m';      user_fg=$'\033[38;2;110;25;28m\033[1m'
+host_fg=$'\033[38;2;80;25;65m\033[1m';    path_fg=$'\033[38;2;90;50;25m\033[1m'
+gh_fg=$'\033[38;2;80;60;15m\033[1m';      branch_fg=$'\033[38;2;30;75;25m\033[1m'
+release_fg=$'\033[38;2;55;90;40m\033[1m'; status_fg=$'\033[38;2;20;55;85m\033[1m'
+ram_fg=$'\033[38;2;35;25;80m\033[1m';     state_fg=$'\033[38;2;30;70;80m\033[1m'
+reset=$'\033[0m'
+
 is_ssh() { [ -n "$SSH_CONNECTION" ] || [ -n "$SSH_TTY" ]; }
 is_root() { [ "$(id -u)" -eq 0 ]; }
 
-# Open background for the entire first line
-line1=$(printf "\033[${BG}m")
+# ── OS logo ─────────────────────────────────────────────────────────────
+if [ -f /etc/os-release ]; then
+    . /etc/os-release 2>/dev/null
+    case "${ID,,}" in
+        linuxmint) os_logo=$'\U000F08ED' ;;  ubuntu) os_logo=$'\U0000F31B' ;;
+        *)         os_logo=$'\U0000F31A' ;;
+    esac
+else os_logo=$'\U0000F31A'; fi
 
-if is_ssh || is_root; then
-    line1="${line1}$(printf "\033[1;38;2;255;136;0m%s\033[22;39m" "$(whoami)")@"
-    if is_ssh; then
-        line1="${line1}$(printf "\033[1;32m%s\033[22;39m" "$(hostname -s)") in "
-    fi
-fi
-line1="${line1}$(printf "\033[1;36m%s\033[22;39m" "$dir_short")"
+# ── Directory icon substitution ─────────────────────────────────────────
+declare -A icons=(
+    [Downloads]=$'\U000F01DA'   [Documents]=$'\U000F0219'   [Pictures]=$'\U0000F03E'
+    [Videos]=$'\U000F0567'      [Music]=$'\U000F075A'       [Desktop]=$'\U0000F108'
+    [Woelkchen]=$'\U0000F0C2'   [Uni]=$'\U0000F19C'
+)
+IFS='/' read -ra pp <<< "$dir_short"; pres=(); picon=()
+for p in "${pp[@]}"; do
+    if [ -n "$p" ] && [ -n "${icons[$p]:-}" ]; then pres+=("${icons[$p]}"); picon+=('1')
+    else pres+=("$p"); picon+=('0'); fi
+done
+pjoin=''
+for ((i=0; i<${#pres[@]}; i++)); do
+    if [ "$i" -eq 0 ]; then pjoin="${pres[$i]}"
+    else s='/'; [[ "${picon[$i-1]}" == '1' ]] && s=' /'; pjoin="${pjoin}${s}${pres[$i]}"; fi
+done
 
-# --- Git info (starship-style) ---
-if git -C "$dir" rev-parse --git-dir >/dev/null 2>&1; then
-    # GitHub user from remote (white "github:", cyan username)
-    github_user=""
+# ── GitHub user ─────────────────────────────────────────────────────────
+github_user=''
+[ -f ~/.config/gh/hosts.yml ] && github_user=$(grep -oP '^\s*user:\s*\K\S+' ~/.config/gh/hosts.yml 2>/dev/null || true)
+if [ -z "$github_user" ] && git -C "$dir" rev-parse --git-dir >/dev/null 2>&1; then
     for remote in origin $(git -C "$dir" remote 2>/dev/null); do
         url=$(git -C "$dir" config --get "remote.${remote}.url" 2>/dev/null) || continue
-        if [[ "$url" =~ git@github\.com:([^/]+) ]]; then
-            github_user="${BASH_REMATCH[1]}"
-            break
-        fi
-        if [[ "$url" =~ github\.com/([^/]+) ]]; then
-            github_user="${BASH_REMATCH[1]}"
-            break
-        fi
+        [[ "$url" =~ git@github\.com:([^/]+) ]] && { github_user="${BASH_REMATCH[1]}"; break; }
+        [[ "$url" =~ github\.com/([^/]+) ]] && { github_user="${BASH_REMATCH[1]}"; break; }
     done
-    if [ -n "$github_user" ]; then
-        line1="${line1} $(printf '\033[1;37mgithub:\033[1;38;2;167;139;250m%s\033[22;39m' "$github_user")"
-    fi
+fi
+[ -z "$github_user" ] && github_user=$(git config --global user.name 2>/dev/null || true)
+[ -z "$github_user" ] && github_user="${GITHUB_USER:-}"
 
-    # Branch (bold purple), with latest tag in braces if present
+# ── Git info ────────────────────────────────────────────────────────────
+branch=''; tag=''; git_state=''; git_status_text=''
+if git -C "$dir" rev-parse --git-dir >/dev/null 2>&1; then
     branch=$(git -C "$dir" branch --show-current 2>/dev/null)
-    if [ -n "$branch" ]; then
-        line1="${line1} $(printf "\033[1;37m")branch$(printf "\033[22;39m") $(printf "\033[1;38;2;255;179;71m%s\033[22;39m" "$branch")"
-        tag=$(git -C "$dir" describe --tags --abbrev=0 2>/dev/null) && [[ -n "$tag" ]] && \
-            line1="${line1} $(printf '(\033[1;38;2;255;179;71m%s\033[22;39m)' "${tag#v}")"
-    fi
-
-    # State: rebase/merge/cherry-pick/bisect/revert (bold yellow)
+    [ -z "$branch" ] && branch=":$(git -C "$dir" rev-parse --short HEAD 2>/dev/null)"
+    tag=$(git -C "$dir" describe --tags --abbrev=0 2>/dev/null || true)
     gdir=$(git -C "$dir" rev-parse --git-dir 2>/dev/null)
-    state=""
     if [ -d "$gdir/rebase-merge" ] || [ -d "$gdir/rebase-apply" ]; then
-        # Try to get progress
-        state="REBASE"
-        [ -f "$gdir/rebase-merge/msgnum" ] && state="REBASE $(cat "$gdir/rebase-merge/msgnum")/$(cat "$gdir/rebase-merge/end" 2>/dev/null || echo '?')"
-    elif [ -f "$gdir/MERGE_HEAD" ]; then
-        state="MERGE"
-    elif [ -f "$gdir/CHERRY_PICK_HEAD" ]; then
-        state="CHERRY-PICK"
-    elif [ -f "$gdir/REVERT_HEAD" ]; then
-        state="REVERT"
-    elif [ -f "$gdir/BISECT_START" ]; then
-        state="BISECT"
+        git_state="REBASE"
+        [ -f "$gdir/rebase-merge/msgnum" ] && git_state="REBASE $(cat "$gdir/rebase-merge/msgnum")/$(cat "$gdir/rebase-merge/end" 2>/dev/null || echo '?')"
+    elif [ -f "$gdir/MERGE_HEAD" ]; then git_state="MERGE"
+    elif [ -f "$gdir/CHERRY_PICK_HEAD" ]; then git_state="CHERRY-PICK"
+    elif [ -f "$gdir/REVERT_HEAD" ]; then git_state="REVERT"
+    elif [ -f "$gdir/BISECT_START" ]; then git_state="BISECT"
     fi
-    if [ -n "$state" ]; then
-        line1="${line1} $(printf "\033[1;33m[%s]\033[22;39m" "$state")"
-    fi
-
-    # Status: use starship custom git-status-prompt (bold red)
-    git_status_text=$(cd "$dir" && ~/.local/bin/git-status-prompt 2>/dev/null)
-    if [ -n "$git_status_text" ]; then
-        line1="${line1} $(printf "\033[1;31m%s\033[22;39m" "$git_status_text")"
-    fi
+    staged=0 modified=0 untracked=0 deleted=0 renamed=0 conflicted=0
+    while IFS= read -r line; do
+        xy="${line:0:2}"; x="${xy:0:1}"; y="${xy:1:1}"
+        [[ "$x$y" = "??" || "$x$y" = "!!" ]] && { ((untracked++)); continue; }
+        [[ "$x" = "u" || "$y" = "u" || "$x" = "U" || "$y" = "U" ]] && { ((conflicted++)); continue; }
+        case "$x" in M|A|D|R|C) ((staged++)) ;; esac
+        case "$y" in M) ((modified++)) ;; D) ((deleted++)) ;; esac
+        case "$x" in R|C) ((renamed++)) ;; esac
+    done < <(git -C "$dir" status --porcelain 2>/dev/null)
+    ahead=0 behind=0
+    ab=$(git -C "$dir" rev-list --left-right --count @{upstream}...HEAD 2>/dev/null) && {
+        behind=$(echo "$ab" | awk '{print $1}'); ahead=$(echo "$ab" | awk '{print $2}')
+    }
+    sp=()
+    ((staged))    && sp+=("$staged+");    ((modified))  && sp+=("$modified~")
+    ((untracked)) && sp+=("$untracked?"); ((deleted))   && sp+=("$deleted-")
+    ((renamed))   && sp+=("$renamed»");   ((conflicted)) && sp+=("$conflicted!")
+    ((ahead))     && sp+=("${ahead}↑");   ((behind))    && sp+=("${behind}↓")
+    if (( ${#sp[@]} )); then IFS=' '; git_status_text="❨${sp[*]}❩"; fi
 fi
 
-# Close background
-line1="${line1}"$(printf "\033[0m")
+# ── RAM usage ───────────────────────────────────────────────────────────
+mt=''; ma=''
+while IFS=':' read -r k v; do
+    case "$k" in MemTotal) mt=$(awk '{print $1}' <<< "$v") ;; MemAvailable) ma=$(awk '{print $1}' <<< "$v") ;; esac
+done < /proc/meminfo
+ram=''; [ -n "$mt" ] && [ -n "$ma" ] && [ "$mt" -gt 0 ] && ram="$(( 100 - (ma * 100 / mt) ))%"
+
+# ── Assemble Line 1 ─────────────────────────────────────────────────────
+line1="${BG}${c1}${C1}"
+if is_ssh || is_root; then
+    line1+="${user_fg}$(whoami) ${black}${os_logo} ${host_fg}$(hostname -s) "
+else
+    line1+=" ${black}${os_logo} "
+fi
+line1+="${C2}${c1} "
+is_ssh && line1+="${black} in ${path_fg}${pjoin} " || line1+="${path_fg}${pjoin} "
+line1+="${C3}${c2}"
+if [ -n "$github_user" ]; then line1+=" ${black}"$'\U000F02A4'" ${gh_fg}${github_user} "; else line1+=" "; fi
+line1+="${C4}${c3}"
+if [ -n "$branch" ]; then
+    line1+=" ${black}"$'\U000F062C'" ${branch_fg}${branch} "
+    [ -n "$tag" ] && line1+="${release_fg}(${tag}) "
+else line1+=" "; fi
+line1+="${C5}${c4}"
+if [ -n "$git_status_text" ]; then
+    line1+="${status_fg} ${git_status_text} "
+    [ -n "$git_state" ] && line1+="${state_fg}[${git_state}] "
+elif [ -n "$git_state" ]; then
+    line1+="${state_fg} [${git_state}] "
+else line1+=" "; fi
+line1+="${C6}${c5}"
+line1+=" ${black}"$'\U000F035B'" ${ram_fg}${ram} "
+line1+="${c6}${reset}"
 
 # --- Model name ---
 model=$(echo "$input" | python3 -c "

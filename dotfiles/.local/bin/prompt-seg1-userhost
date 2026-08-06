@@ -1,0 +1,41 @@
+#!/bin/bash
+# Segment 1 — Username · OS logo · Hostname  (bg: #e88489 pink)
+#
+# Local:  only OS logo
+# SSH:    username · OS logo · hostname
+# Always outputs:  + content + (→peach)
+
+# ── Colors ───────────────────────────────────────────────────────────────
+c1_bg='\033[48;2;232;132;137m'   # segment 1 bg  #e88489
+c2_bg='\033[48;2;239;159;122m'   # segment 2 bg  #ef9f7a
+c1_fg='\033[38;2;232;132;137m'   # segment 1 fg (for chevrons)
+user_fg='\033[38;2;110;25;28m\033[1m'    # bold dark red
+host_fg='\033[38;2;80;25;65m\033[1m'     # bold dark plum
+black='\033[38;2;24;24;24m\033[1m'       # near-black for symbols
+
+# ── Data ──────────────────────────────────────────────────────────────────
+user=$(whoami)
+host=$(hostname -s 2>/dev/null || hostname | cut -d. -f1)
+
+if [ -f /etc/os-release ]; then
+    . /etc/os-release 2>/dev/null
+    case "${ID,,}" in
+        linuxmint) logo=$'\U000F08ED' ;;
+        ubuntu)    logo=$'\U0000F31B' ;;
+        *)         logo=$'\U0000F31A' ;;  # generic tux
+    esac
+else
+    logo=$'\U0000F31A'
+fi
+
+sshing=''
+[ -n "${SSH_CONNECTION:-}${SSH_CLIENT:-}${SSH_TTY:-}" ] && sshing=1
+
+# ── Output ────────────────────────────────────────────────────────────────
+printf '%b' "${c1_fg}${c1_bg}"
+if [ -n "$sshing" ]; then
+    printf '%b' "${user_fg}${user} ${black}${logo} ${host_fg}${host} "
+else
+    printf '%b' "${black}${logo} "
+fi
+printf '%b' "${c2_bg}${c1_fg}"

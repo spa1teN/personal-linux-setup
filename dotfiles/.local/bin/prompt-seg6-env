@@ -1,0 +1,31 @@
+#!/bin/bash
+# Segment 6 — RAM usage  (bg: #bdbaf1 lavender)
+#
+# Always outputs: RAM percentage +  end-cap + reset
+
+# ── Colors ───────────────────────────────────────────────────────────────
+c6_bg='\033[48;2;189;186;241m'   # segment 6 bg  #bdbaf1
+c6_fg='\033[38;2;189;186;241m'   # segment 6 fg (for end-cap)
+fg='\033[38;2;35;25;80m\033[1m'          # bold dark indigo
+black='\033[38;2;24;24;24m\033[1m'
+reset='\033[0m'
+
+# ── RAM usage ────────────────────────────────────────────────────────────
+mem_total='' mem_avail=''
+while IFS=':' read -r key val; do
+    case "$key" in
+        MemTotal)     mem_total=$(awk '{print $1}' <<< "$val") ;;
+        MemAvailable) mem_avail=$(awk '{print $1}' <<< "$val") ;;
+    esac
+done < /proc/meminfo
+
+ram=''
+if [ -n "$mem_total" ] && [ -n "$mem_avail" ] && [ "$mem_total" -gt 0 ]; then
+    pct=$(( 100 - (mem_avail * 100 / mem_total) ))
+    ram="${pct}%"
+fi
+
+# ── Output ────────────────────────────────────────────────────────────────
+printf '%b' "${c6_bg}"
+printf '%b' " ${black}"$'\U000F035B'" ${fg}${ram} "   # 󰍛 memory icon + percentage
+printf '%b' "\033[49m${c6_fg}${reset}"

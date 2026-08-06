@@ -60,7 +60,7 @@ ITEMS=(
   "tmux|dotfiles/.tmux.conf|.tmux.conf|copy"
   "bashrc|dotfiles/.bashrc|.bashrc|copy"
   "bash_aliases|dotfiles/.bash_aliases.template|.bash_aliases|render"
-  "starship|dotfiles/.config/starship.toml::dotfiles/.config/starship-local.toml::dotfiles/.local/bin/git-prompt-section::dotfiles/.local/bin/git-status-prompt|.config/starship.toml::.config/starship-local.toml::.local/bin/git-prompt-section::.local/bin/git-status-prompt|multi"
+  "starship|dotfiles/.config/starship.toml::dotfiles/.config/starship-local.toml::dotfiles/.local/bin/prompt-seg1-userhost::dotfiles/.local/bin/prompt-seg2-path::dotfiles/.local/bin/prompt-seg3-github::dotfiles/.local/bin/prompt-seg4-git::dotfiles/.local/bin/prompt-seg5-gitstatus::dotfiles/.local/bin/prompt-seg6-env|.config/starship.toml::.config/starship-local.toml::.local/bin/prompt-seg1-userhost::.local/bin/prompt-seg2-path::.local/bin/prompt-seg3-github::.local/bin/prompt-seg4-git::.local/bin/prompt-seg5-gitstatus::.local/bin/prompt-seg6-env|multi"
   "claude-settings|dotfiles/.claude/settings.json::dotfiles/.claude/settings.local.json|.claude/settings.json::.claude/settings.local.json|multi"
   "claude-statusline|dotfiles/.claude/scripts/ds-statusline.sh|.claude/scripts/ds-statusline.sh|copy"
   "claude-plugins|dotfiles/.claude/plugins/installed_plugins.json|.claude/plugins/installed_plugins.json|copy"

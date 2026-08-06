@@ -7,10 +7,10 @@ config.window_decorations = "RESIZE"
 config.integrated_title_button_alignment = "Right"
 config.use_fancy_tab_bar = true
 config.tab_bar_at_bottom = false
-config.hide_tab_bar_if_only_one_tab = true
+config.hide_tab_bar_if_only_one_tab = false
 config.tab_max_width = 999
 
-
+config.window_background_image = '/home/caspar/.wezterm/bg1.jpg'
 
 -- Auto-detect colors from the current GTK theme
 local function gtk_theme_color(var_name)

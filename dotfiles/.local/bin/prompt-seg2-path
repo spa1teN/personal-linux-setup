@@ -1,0 +1,69 @@
+#!/bin/bash
+# Segment 2 — Directory path  (bg: #ef9f7a peach)
+#
+# Prefixes "in" when connected via SSH.
+# Substitutes well-known directory names with Nerd Font icons.
+# Always outputs: content + (→gold)
+
+# ── Colors ───────────────────────────────────────────────────────────────
+c2_bg='\033[48;2;239;159;122m'   # segment 2 bg  #ef9f7a
+c3_bg='\033[48;2;227;201;145m'   # segment 3 bg  #e3c991
+c2_fg='\033[38;2;239;159;122m'   # segment 2 fg (for chevron)
+path_fg='\033[38;2;90;50;25m\033[1m'     # bold dark brown
+black='\033[38;2;24;24;24m\033[1m'       # near-black for "in" prefix
+
+# ── SSH detection ────────────────────────────────────────────────────────
+sshing=''
+[ -n "${SSH_CONNECTION:-}${SSH_CLIENT:-}${SSH_TTY:-}" ] && sshing=1
+
+# ── Path with icon substitution ──────────────────────────────────────────
+dir="${PWD/#$HOME/\~}"
+
+# Declare icon mappings (directory name → Nerd Font glyph)
+declare -A icons=(
+    [Downloads]=$'\U000F01DA'    # 󰇚
+    [Documents]=$'\U000F0219'    # 󰈙
+    [Pictures]=$'\U0000F03E'     # 
+    [Videos]=$'\U000F0567'       # 󰕧
+    [Music]=$'\U000F075A'        # 󰝚
+    [Desktop]=$'\U0000F108'      # 
+    [Woelkchen]=$'\U0000F0C2'    #  fa-cloud
+    [Uni]=$'\U0000F19C'          #  university
+)
+
+# Substitute each path component, tracking which are icons
+IFS='/' read -ra parts <<< "$dir"
+result=()
+is_icon=()
+for part in "${parts[@]}"; do
+    if [ -n "$part" ] && [ -n "${icons[$part]:-}" ]; then
+        result+=("${icons[$part]}")
+        is_icon+=('1')
+    else
+        result+=("$part")
+        is_icon+=('0')
+    fi
+done
+
+# Rejoin with / — use spaced slash when adjacent to an icon
+joined=''
+for ((i=0; i<${#result[@]}; i++)); do
+    if [ "$i" -eq 0 ]; then
+        joined="${result[$i]}"
+    else
+        sep='/'
+        if [[ "${is_icon[$i-1]}" == '1' ]]; then
+            sep=' /'
+        fi
+        joined="${joined}${sep}${result[$i]}"
+    fi
+done
+
+# ── Output ────────────────────────────────────────────────────────────────
+printf '%b' "${c2_bg} "
+if [ -n "$sshing" ]; then
+    printf '%b' "${black} in ${path_fg}${joined} "
+else
+    printf '%b' "${path_fg}${joined} "
+fi
+printf '%b' "${c3_bg}${c2_fg}"
