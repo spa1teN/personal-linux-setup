@@ -485,6 +485,12 @@ install_binary_build() {
     src_dir="$clone_dir"
   fi
 
+  # Generate .VERSION file (embedded at build time, gitignored)
+  if [[ ! -f "$src_dir/.VERSION" ]]; then
+    git -C "$src_dir" rev-parse HEAD > "$src_dir/.VERSION" 2>/dev/null || \
+      echo "unknown" > "$src_dir/.VERSION"
+  fi
+
   local built_binary="$src_dir/$binary_name"
 
   # Build if the binary doesn't exist in the source dir
