@@ -1,7 +1,7 @@
 # Starship Prompt — Pastel Powerline (SSH-Modus)
 # User+Host sichtbar, echte Powerline-Chevrons
 
-format = "[](fg:#5C2D6B)$username[ @ ](bg:#5C2D6B bold white)$hostname[](bg:#6B4226 fg:#5C2D6B)[ in](bg:#6B4226 bold white)$directory$custom$line_break$character"
+format = "[](fg:#5C2D6B)$username[@](bg:#5C2D6B bold white)$hostname[](bg:#6B4226 fg:#5C2D6B)[ in](bg:#6B4226 bold white)$directory$custom$line_break$character"
 
 [username]
 format = "[$user]($style)"

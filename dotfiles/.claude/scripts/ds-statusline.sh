@@ -31,10 +31,27 @@ line1="${line1}$(printf "\033[1;36m%s\033[22;39m" "$dir_short")"
 
 # --- Git info (starship-style) ---
 if git -C "$dir" rev-parse --git-dir >/dev/null 2>&1; then
+    # GitHub user from remote (white "github:", cyan username)
+    github_user=""
+    for remote in origin $(git -C "$dir" remote 2>/dev/null); do
+        url=$(git -C "$dir" config --get "remote.${remote}.url" 2>/dev/null) || continue
+        if [[ "$url" =~ git@github\.com:([^/]+) ]]; then
+            github_user="${BASH_REMATCH[1]}"
+            break
+        fi
+        if [[ "$url" =~ github\.com/([^/]+) ]]; then
+            github_user="${BASH_REMATCH[1]}"
+            break
+        fi
+    done
+    if [ -n "$github_user" ]; then
+        line1="${line1} $(printf '\033[1;37mgithub:\033[1;33m%s\033[22;39m' "$github_user")"
+    fi
+
     # Branch (bold purple), with latest tag in braces if present
     branch=$(git -C "$dir" branch --show-current 2>/dev/null)
     if [ -n "$branch" ]; then
-        line1="${line1} on branch $(printf "\033[1;35m%s\033[22;39m" "$branch")"
+        line1="${line1} branch $(printf "\033[1;35m%s\033[22;39m" "$branch")"
         tag=$(git -C "$dir" describe --tags --abbrev=0 2>/dev/null) && [[ -n "$tag" ]] && \
             line1="${line1} $(printf '(\033[1;35m%s\033[22;39m)' "${tag#v}")"
     fi

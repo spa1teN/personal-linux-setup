@@ -1,14 +1,15 @@
 #!/bin/bash
 # Starship custom module: Git-Sektion mit Powerline-Chevrons
-# Raw-ANSI für dir→branch→status→right_cap
+# Raw-ANSI für dir→github→branch→status→right_cap
 
 # ── Dark Background Colors ────────────────────────────────────────────
-purple_bg='\033[48;2;92;45;107m'    # #5C2D6B
 peach_bg='\033[48;2;107;66;38m'     # #6B4226
+github_bg='\033[48;2;58;92;58m'     # #3A5C3A
 blue_bg='\033[48;2;45;95;107m'      # #2D5F6B
 teal_bg='\033[48;2;26;74;74m'       # #1A4A4A
 
 peach_fg='\033[38;2;107;66;38m'
+github_fg='\033[38;2;58;92;58m'
 blue_fg='\033[38;2;45;95;107m'
 teal_fg='\033[38;2;26;74;74m'
 
@@ -17,6 +18,7 @@ bold='\033[1m'
 white='\033[37m'
 gold='\033[38;2;255;179;71m'
 red='\033[38;2;255;107;107m'
+cyan='\033[38;2;255;180;100m'
 yellow='\033[33m'
 reset='\033[0m'
 
@@ -50,9 +52,27 @@ get_branch() {
 get_release() {
     local tag
     tag=$(git describe --tags --abbrev=0 2>/dev/null) || return 1
-    # Strip leading v if present (v1.2.3 → 1.2.3)
     tag="${tag#v}"
     [[ -n "$tag" ]] && echo "$tag" && return 0
+    return 1
+}
+
+get_github_user() {
+    local url remote
+    # Try origin first, then any remote
+    for remote in origin $(git remote 2>/dev/null); do
+        url=$(git config --get "remote.${remote}.url" 2>/dev/null) || continue
+        # git@github.com:user/repo.git → user
+        if [[ "$url" =~ git@github\.com:([^/]+) ]]; then
+            echo "${BASH_REMATCH[1]}"
+            return 0
+        fi
+        # https://github.com/user/repo.git → user
+        if [[ "$url" =~ github\.com/([^/]+) ]]; then
+            echo "${BASH_REMATCH[1]}"
+            return 0
+        fi
+    done
     return 1
 }
 
@@ -65,15 +85,26 @@ fi
 
 # ── In Git Repo ───────────────────────────────────────────────────────
 
-# Dir→branch chevron
-echo -ne "${blue_bg}${peach_fg}"
+github_user=$(get_github_user)
 
-# " on branch " white, branch name gold, release in braces if tagged
+if [[ -n "$github_user" ]]; then
+    # Dir→Github chevron
+    echo -ne "${github_bg}${peach_fg}"
+    # Github segment: "github:" white, username colored
+    echo -ne "${bold}${white} github:${cyan}${github_user} "
+    # Github→Branch chevron
+    echo -ne "${blue_bg}${github_fg}"
+else
+    # Dir→Branch chevron (direct)
+    echo -ne "${blue_bg}${peach_fg}"
+fi
+
+# " branch" white, branch name gold, release in braces if tagged
 branch=$(get_branch)
 if release=$(get_release); then
-    echo -ne "${bold}${white} on branch ${gold}${branch} ${white}(${gold}${release}${white}) "
+    echo -ne "${bold}${white} branch ${gold}${branch} ${white}(${gold}${release}${white}) "
 else
-    echo -ne "${bold}${white} on branch ${gold}${branch} "
+    echo -ne "${bold}${white} branch ${gold}${branch} "
 fi
 
 # Git-State (rebasing etc)
