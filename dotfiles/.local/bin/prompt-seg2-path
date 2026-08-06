@@ -62,7 +62,7 @@ done
 # ── Output ────────────────────────────────────────────────────────────────
 printf '%b' "${c2_bg} "
 if [ -n "$sshing" ]; then
-    printf '%b' "${black} in ${path_fg}${joined} "
+    printf '%b' "${black}in ${path_fg}${joined} "
 else
     printf '%b' "${path_fg}${joined} "
 fi

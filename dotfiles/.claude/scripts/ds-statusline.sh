@@ -213,15 +213,15 @@ if [ -n "$stats" ]; then
     tok_part=$(echo "$stats" | head -1)
     cost_part=$(echo "$stats" | tail -1)
 
-    line2="used $(printf '\033[33m%s\033[0m' "$tok_part") ($(printf '\033[32m%s\033[0m' "$cost_part"))"
+    line2="$(printf '\033[33m%s\033[0m' "$tok_part")/$(printf '\033[32m%s\033[0m' "$cost_part")"
     if [ -n "$model" ]; then
-        line2="${line2} with $(printf '\033[35m%s\033[0m' "$model")"
+        line2="${line2} via $(printf '\033[35m%s\033[0m' "$model")"
     fi
 
     # Show balance only for DeepSeek models
     if [ -n "$model" ] && echo "$model" | grep -qi "deepseek"; then
         if [ "$bal" != "?" ] && [ -n "$bal" ]; then
-            line2="${line2} - remaining balance: $(printf '\033[36m%s\033[0m' "$bal")"
+            line2="${line2}, balance: $(printf '\033[36m%s\033[0m' "$bal")"
         fi
     fi
 fi
