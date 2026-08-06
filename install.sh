@@ -21,9 +21,29 @@ SKIPPED=0
 UNINSTALLED=0
 declare -A _DEPS_DONE=()
 
-# Secrets passed via CLI flags (empty = prompt or reuse from existing file)
-CLI_TOKEN=""
-CLI_NEXTCLOUD_PW=""
+# State tracking: remembers which configs this instance has installed
+STATE_FILE="$HOME/.dotfiles-state"
+declare -A _STATE_ACTIVE=()
+
+_state_load() {
+  _STATE_ACTIVE=()
+  if [[ -f "$STATE_FILE" ]]; then
+    while IFS= read -r line; do
+      [[ -n "$line" ]] && _STATE_ACTIVE["$line"]=1
+    done < "$STATE_FILE"
+  fi
+}
+
+_state_save() {
+  (
+    for key in "${!_STATE_ACTIVE[@]}"; do
+      echo "$key"
+    done
+  ) > "$STATE_FILE"
+}
+
+_state_add() { _STATE_ACTIVE["$1"]=1; _state_save; }
+_state_remove() { unset '_STATE_ACTIVE[$1]'; _state_save; }
 
 # --- Config registry: name | source | home-relative target | kind ---
 # kind: copy         = copy from repo into $HOME (src relative to repo, or absolute)
@@ -40,8 +60,7 @@ ITEMS=(
   "tmux|dotfiles/.tmux.conf|.tmux.conf|copy"
   "bashrc|dotfiles/.bashrc|.bashrc|copy"
   "bash_aliases|dotfiles/.bash_aliases.template|.bash_aliases|render"
-  "starship|dotfiles/.config/starship.toml::dotfiles/.config/starship-local.toml|.config/starship.toml::.config/starship-local.toml|multi"
-  "git-prompt|dotfiles/.local/bin/git-prompt-section::dotfiles/.local/bin/git-status-prompt|.local/bin/git-prompt-section::.local/bin/git-status-prompt|multi"
+  "starship|dotfiles/.config/starship.toml::dotfiles/.config/starship-local.toml::dotfiles/.local/bin/git-prompt-section::dotfiles/.local/bin/git-status-prompt|.config/starship.toml::.config/starship-local.toml::.local/bin/git-prompt-section::.local/bin/git-status-prompt|multi"
   "claude-settings|dotfiles/.claude/settings.json::dotfiles/.claude/settings.local.json|.claude/settings.json::.claude/settings.local.json|multi"
   "claude-statusline|dotfiles/.claude/scripts/ds-statusline.sh|.claude/scripts/ds-statusline.sh|copy"
   "claude-plugins|dotfiles/.claude/plugins/installed_plugins.json|.claude/plugins/installed_plugins.json|copy"
@@ -79,32 +98,34 @@ Dependencies are installed automatically. If sudo is needed, the script
 will tell you.
 
 Options:
-  --help                   Show this help and exit
-  --list                   List available configs and their install status
-  --uninstall               Remove config(s); restore from backup if available
-  --token TOKEN            ANTHROPIC_AUTH_TOKEN for bash_aliases (sk-...)
-  --nextcloud-pw PASSWORD  NEXTCLOUD_PASSWORD for bash_aliases
-  --enable                  Enable a config (persistent across reboots)
-  --disable                 Disable a config (persistent across reboots)
-  --store                   Copy local version back into the repo
+  --help                     Show this help and exit
+  --list                     List active configs and their install status
+  --update                   Update all active configs from the repo
+  --remove                   Remove config(s); restore from backup if available
+  --set                      Copy local version back into the repo
+  --enable, --disable        Enable or disable a config marked in color
 
-Configs (colored = supports --enable/--disable):
-  wezterm                  WezTerm terminal config
-  tmux                     tmux config (mouse on)
-  bashrc                   Bash config (Starship, NVM, fzf, ble.sh)
-  bash_aliases             Bash aliases with secrets (rendered, mode 600)
-  starship                 Starship prompt configs (SSH + local)
-  git-prompt                Git status in prompt (starship dependency)
-  claude-settings          Claude Code settings + settings.local
-  claude-statusline        Claude Code status line script
-  claude-plugins           Claude Code installed plugins
-  claude-marketplaces      Claude Code known marketplaces
-  gpaste                   GPaste-Reloaded Cinnamon applet (custom fork)
-  headset-battery           Headset battery tray (Cinnamon + GNOME)
-  fan-control               MSI B550 fan quiet setup (requires sudo)
+Config files:
+  wezterm                    WezTerm terminal config
+  tmux                       tmux config (mouse on)
+  bashrc                     Bash config (Starship, NVM, fzf, ble.sh)
+  bash_aliases               Bash aliases with secrets (rendered, mode 600)
+  starship                   Starship prompt + git status scripts (SSH + local)
+Claude Code:
+  claude-settings            Claude Code settings + settings.local
+  claude-statusline          Claude Code status line script
+  claude-plugins             Claude Code installed plugins
+  claude-marketplaces        Claude Code known marketplaces
+Tray:
+  gpaste                     GPaste-Reloaded Cinnamon applet (custom fork)
+  headset-battery            Headset battery tray (Cinnamon + GNOME)
+EOF
+  printf '  %b%-26s%b %s\n' "$CYAN" "tailscale-tray" "$NC" "Tailscale systray (custom fork, built from source)"
+  cat <<'EOF'
+Hardware specific:
+  fan-control                MSI B550 fan quiet setup (requires sudo)
   amdgpu-fix                 AMD GPU freeze fix — adds amdgpu.dcdebugmask=0x12 to GRUB
 EOF
-  printf '  %b%s%b\n' "$CYAN" "tailscale-tray           Tailscale systray (custom fork, built from source)" "$NC"
 }
 
 # ==============================================================================
@@ -225,16 +246,8 @@ render_aliases() {
   local dst="$HOME/.bash_aliases"
   local dst_short="${dst#$HOME/}"
 
-  local token="${CLI_TOKEN:-}"
-  local nextcloud_pw="${CLI_NEXTCLOUD_PW:-}"
-
-  # Also check environment variables
-  if [[ -z "$token" ]]; then
-    token="${ANTHROPIC_AUTH_TOKEN:-}"
-  fi
-  if [[ -z "$nextcloud_pw" ]]; then
-    nextcloud_pw="${NEXTCLOUD_PASSWORD:-}"
-  fi
+  local token="${ANTHROPIC_AUTH_TOKEN:-}"
+  local nextcloud_pw="${NEXTCLOUD_PASSWORD:-}"
 
   # Try to reuse existing values from an already-rendered file
   if [[ -z "$token" && -f "$dst" ]]; then
@@ -284,6 +297,10 @@ render_aliases() {
   else
     log "rendered $dst_short (mode 600)"
     ((INSTALLED++)) || true
+    echo
+    info "To set these permanently, edit ~/.bash_aliases directly:"
+    info "  ANTHROPIC_AUTH_TOKEN=sk-..."
+    info "  NEXTCLOUD_PASSWORD=..."
   fi
 }
 
@@ -919,15 +936,16 @@ install_item() {
         error "Unknown kind '$_kind' for $name"
         ;;
     esac
+    _state_add "$name"
     return
   done
   error "Unknown config: $name"
 }
 
 # ==============================================================================
-# Uninstall one item by name
+# Remove one item by name
 # ==============================================================================
-uninstall_item() {
+remove_item() {
   local name="$1"
   for item in "${ITEMS[@]}"; do
     parse_item "$item"
@@ -1045,7 +1063,7 @@ uninstall_item() {
         ;;
       fan_control)
         warn "fan-control uses system files — uninstall stops timer but keeps files"
-        warn "Use './install.sh --store fan-control' first if you want to save changes"
+        warn "Use './install.sh --set fan-control' first if you want to save changes"
         if systemctl is-enabled fan-mirror.timer &>/dev/null; then
           sudo systemctl disable --now fan-mirror.timer 2>/dev/null && \
             log "disabled fan-mirror.timer" || warn "failed to disable fan-mirror.timer"
@@ -1074,6 +1092,7 @@ uninstall_item() {
 
     # Try to restore from most recent backup
     _restore_from_backup "$dst_short" "$abs_dst"
+    _state_remove "$name"
     return
   done
   error "Unknown config: $name"
@@ -1105,13 +1124,23 @@ _restore_from_backup() {
 }
 
 # ==============================================================================
-# List all configs and their install status
+# List active configs and their install status
 # ==============================================================================
 list_items() {
+  _state_load
+  if [[ ${#_STATE_ACTIVE[@]} -eq 0 ]]; then
+    echo
+    info "No configs installed yet. Run './install.sh <config>' to install one."
+    echo
+    return 0
+  fi
   printf "\n  %-25s %-10s %s\n" "CONFIG" "KIND" "STATUS / TARGET"
   printf "  %-25s %-10s %s\n" "──────" "────" "──────────────"
   for item in "${ITEMS[@]}"; do
     parse_item "$item"
+    if [[ -z "${_STATE_ACTIVE[$_name]:-}" ]]; then
+      continue
+    fi
     local status=""
     local dst="$HOME/$_target"
 
@@ -1241,10 +1270,10 @@ list_items() {
 }
 
 # ==============================================================================
-# Store — copy local version back into the repo
+# Set — copy local version back into the repo
 # Only works for copy/multi kinds with repo-relative sources.
 # ==============================================================================
-store_item() {
+set_item() {
   local name="$1"
   for item in "${ITEMS[@]}"; do
     parse_item "$item"
@@ -1342,7 +1371,7 @@ store_item() {
         return 1
         ;;
       *)
-        error "Cannot store '$name' — only copy/multi configs support --store"
+        error "Cannot set '$name' — only copy/multi configs support --set"
         return 1
         ;;
     esac
@@ -1459,16 +1488,20 @@ main() {
         ACTION="list"
         shift
         ;;
-      --uninstall|-u)
-        ACTION="uninstall"
+      --update)
+        ACTION="update"
+        shift
+        ;;
+      --remove|-r)
+        ACTION="remove"
         shift
         while [[ $# -gt 0 ]] && [[ "$1" != --* ]]; do
           CONFIGS+=("$1")
           shift
         done
         ;;
-      --store|-s)
-        ACTION="store"
+      --set|-s)
+        ACTION="set"
         shift
         while [[ $# -gt 0 ]] && [[ "$1" != --* ]]; do
           CONFIGS+=("$1")
@@ -1490,14 +1523,6 @@ main() {
           CONFIGS+=("$1")
           shift
         done
-        ;;
-      --token)
-        CLI_TOKEN="$2"
-        shift 2
-        ;;
-      --nextcloud-pw)
-        CLI_NEXTCLOUD_PW="$2"
-        shift 2
         ;;
       --*)
         error "Unknown option: $1"
@@ -1521,26 +1546,28 @@ main() {
     exit 0
   fi
 
-  # Validate config names
-  local -a valid_names=()
-  for item in "${ITEMS[@]}"; do
-    valid_names+=("${item%%|*}")
-  done
+  # Validate config names (skip for update — operates on state file)
+  if [[ "$ACTION" != "update" ]]; then
+    local -a valid_names=()
+    for item in "${ITEMS[@]}"; do
+      valid_names+=("${item%%|*}")
+    done
 
-  for cfg in "${CONFIGS[@]}"; do
-    local found=0
-    for vn in "${valid_names[@]}"; do
-      if [[ "$cfg" == "$vn" ]]; then
-        found=1
-        break
+    for cfg in "${CONFIGS[@]}"; do
+      local found=0
+      for vn in "${valid_names[@]}"; do
+        if [[ "$cfg" == "$vn" ]]; then
+          found=1
+          break
+        fi
+      done
+      if [[ $found -eq 0 ]]; then
+        error "Unknown config: $cfg"
+        echo "Run './install.sh --list' to see available configs."
+        exit 1
       fi
     done
-    if [[ $found -eq 0 ]]; then
-      error "Unknown config: $cfg"
-      echo "Run './install.sh --list' to see available configs."
-      exit 1
-    fi
-  done
+  fi
 
   # Run security check (unless just listing)
   if [[ "$ACTION" != "list" ]]; then
@@ -1560,24 +1587,46 @@ main() {
       _print_summary
       ;;
 
-    uninstall)
+    update)
+      _state_load
+      if [[ ${#_STATE_ACTIVE[@]} -eq 0 ]]; then
+        echo
+        info "No active configs to update. Run './install.sh <config>' first."
+        echo
+        exit 0
+      fi
+      for item in "${ITEMS[@]}"; do
+        parse_item "$item"
+        if [[ -z "${_STATE_ACTIVE[$_name]:-}" ]]; then
+          continue
+        fi
+        info "checking $_name..."
+        install_item "$_name"
+      done
+      _print_summary
+      ;;
+
+    remove)
       for cfg in "${CONFIGS[@]}"; do
-        uninstall_item "$cfg"
+        remove_item "$cfg"
       done
       if (( UNINSTALLED > 0 )); then
         echo
-        echo "  Uninstalled: $UNINSTALLED"
+        echo "  Removed: $UNINSTALLED"
       fi
       if (( UNINSTALLED == 0 )); then
-        echo "  Nothing to uninstall."
+        echo "  Nothing to remove."
       fi
       echo
       ;;
 
-    store)
+    set)
       for cfg in "${CONFIGS[@]}"; do
-        store_item "$cfg"
+        set_item "$cfg"
       done
+      echo
+      info "Don't forget to commit and push your changes:"
+      info "  git -C \"$REPO_DIR\" commit -am 'update configs' && git -C \"$REPO_DIR\" push"
       echo
       ;;
 

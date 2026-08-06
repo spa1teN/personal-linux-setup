@@ -20,16 +20,16 @@ cd ~/setup
 
 The script is idempotent — safe to run multiple times. Dependencies are
 installed automatically. If sudo is needed, the script will tell you.
-Use `--uninstall` to remove configs and restore backups.
+Use `--remove` to remove configs and restore backups.
 
 ### Common Commands
 
 ```bash
 ./install.sh wezterm tmux                # Install specific configs
 ./install.sh bashrc                      # Dependencies installed automatically
-./install.sh --uninstall gpaste           # Remove gpaste applet
-./install.sh --store wezterm              # Copy local version back into repo
-./install.sh bash_aliases --token sk-... --nextcloud-pw ...  # Non-interactive
+./install.sh --remove gpaste             # Remove gpaste applet
+./install.sh --set wezterm                # Copy local version back into repo (then push!)
+./install.sh --update                    # Update all active configs after a pull
 ```
 
 ## What Gets Installed
@@ -40,8 +40,7 @@ Use `--uninstall` to remove configs and restore backups.
 | `tmux` | `~/.tmux.conf` | copy |
 | `bashrc` | `~/.bashrc` | copy |
 | `bash_aliases` | `~/.bash_aliases` | **rendered** (mode 600) |
-| `starship` | `~/.config/starship.toml` + `starship-local.toml` | copy (both) |
-| `git-prompt` | `~/.local/bin/git-prompt-section` + `git-status-prompt` | copy (both) |
+| `starship` | `~/.config/starship.toml` + `starship-local.toml` + `git-prompt-section` + `git-status-prompt` | copy (4 files) |
 | `claude-settings` | `~/.claude/settings.json` + `settings.local.json` | copy (both) |
 | `claude-statusline` | `~/.claude/scripts/ds-statusline.sh` | copy |
 | `claude-plugins` | `~/.claude/plugins/installed_plugins.json` | copy |
@@ -57,13 +56,11 @@ Use `--uninstall` to remove configs and restore backups.
 `bash_aliases` is stored as a template with `{{ANTHROPIC_AUTH_TOKEN}}` and
 `{{NEXTCLOUD_PASSWORD}}` placeholders. On first install you'll be prompted
 for these values. On subsequent runs, the script extracts existing values
-automatically — no re-prompting. You can also pass them via CLI:
+automatically — no re-prompting. After install, edit `~/.bash_aliases`
+directly to set them permanently.
 
-```bash
-./install.sh bash_aliases --token sk-abc123 --nextcloud-pw hunter2
-```
-
-Or via environment variables: `ANTHROPIC_AUTH_TOKEN` and `NEXTCLOUD_PASSWORD`.
+You can also set them via environment variables: `ANTHROPIC_AUTH_TOKEN` and
+`NEXTCLOUD_PASSWORD`.
 
 The rendered file lives **only** at `~/.bash_aliases` (mode 600) and is
 never committed to the repo.

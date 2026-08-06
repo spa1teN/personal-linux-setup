@@ -133,3 +133,8 @@ source /usr/share/doc/fzf/examples/key-bindings.bash
 
 # ble.sh: Autosuggestions + Syntax-Highlighting
 source ~/.local/share/ble.sh/out/ble.sh
+
+# Suppress [ble: exit], [ble: exit N], [ble: EOF] messages
+bleopt exec_exit_mark=
+bleopt exec_errexit_mark=
+bleopt prompt_eol_mark=
