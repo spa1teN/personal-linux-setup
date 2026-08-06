@@ -350,11 +350,27 @@ install_deps() {
       fi
       ;;
     headset-battery)
-      if [[ -f /usr/local/bin/headsetcontrol ]]; then
+      if [[ -f /usr/local/bin/headsetcontrol ]] || command -v headsetcontrol &>/dev/null; then
         log "already installed: headsetcontrol"
       else
-        warn "headsetcontrol not found at /usr/local/bin/headsetcontrol"
-        info "Build from: https://github.com/Sapd/HeadsetControl"
+        info "installing headsetcontrol..."
+        # Try PPA first (Ubuntu/Debian)
+        if dpkg -s headsetcontrol &>/dev/null 2>&1; then
+          log "already installed: headsetcontrol"
+        elif apt-cache show headsetcontrol &>/dev/null 2>&1; then
+          _apt_install headsetcontrol
+        else
+          # Add PPA and install
+          info "adding headsetcontrol PPA..."
+          if needs_sudo; then
+            warn "sudo required for: add-apt-repository ppa:sapd/headsetcontrol"
+          fi
+          sudo add-apt-repository -y ppa:sapd/headsetcontrol 2>/dev/null && \
+            sudo apt update -qq 2>/dev/null && \
+            _apt_install headsetcontrol || \
+            warn "PPA install failed — build from source: https://github.com/Sapd/HeadsetControl"
+          installed_any=1
+        fi
       fi
       ;;
     fan-control)
