@@ -42,8 +42,8 @@ _state_save() {
   ) > "$STATE_FILE"
 }
 
-_state_add() { _STATE_ACTIVE["$1"]=1; _state_save; }
-_state_remove() { unset '_STATE_ACTIVE[$1]'; _state_save; }
+_state_add() { _state_load; _STATE_ACTIVE["$1"]=1; _state_save; }
+_state_remove() { _state_load; unset '_STATE_ACTIVE[$1]'; _state_save; }
 
 # --- Config registry: name | source | home-relative target | kind ---
 # kind: copy         = copy from repo into $HOME (src relative to repo, or absolute)
