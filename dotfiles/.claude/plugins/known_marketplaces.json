@@ -1,0 +1,18 @@
+{
+  "claude-plugins-official": {
+    "source": {
+      "source": "github",
+      "repo": "anthropics/claude-plugins-official"
+    },
+    "installLocation": "/home/caspar/.claude/plugins/marketplaces/claude-plugins-official",
+    "lastUpdated": "2026-08-06T03:07:03.367Z"
+  },
+  "garden-skills": {
+    "source": {
+      "source": "github",
+      "repo": "conardli/garden-skills"
+    },
+    "installLocation": "/home/caspar/.claude/plugins/marketplaces/garden-skills",
+    "lastUpdated": "2026-07-29T17:17:03.434Z"
+  }
+}

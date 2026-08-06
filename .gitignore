@@ -1,0 +1,10 @@
+# Rendered secrets — never commit
+dotfiles/.bash_aliases
+.bash_aliases
+*.bash_aliases.filled
+
+# Editor / OS cruft
+*~
+*.swp
+*.swo
+.DS_Store

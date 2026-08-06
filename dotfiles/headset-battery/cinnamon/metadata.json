@@ -1,0 +1,7 @@
+{
+    "uuid": "headset-battery@caspar",
+    "name": "Headset Battery",
+    "description": "Shows HyperX Cloud II Wireless battery level in the panel via headsetcontrol",
+    "version": "1.0",
+    "icon": "audio-headset"
+}

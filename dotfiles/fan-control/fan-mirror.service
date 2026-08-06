@@ -1,0 +1,6 @@
+[Unit]
+Description=Mirror pwm1 to pwm2
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/bin/fan-mirror.sh

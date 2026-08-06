@@ -1,0 +1,7 @@
+{
+  "uuid": "headset-battery@caspar",
+  "name": "Headset Battery",
+  "description": "Shows HyperX Cloud II Wireless battery level in the top bar via headsetcontrol",
+  "shell-version": ["45", "46", "47", "48", "49", "50"],
+  "version": 1
+}

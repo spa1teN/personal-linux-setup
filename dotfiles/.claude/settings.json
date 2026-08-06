@@ -1,0 +1,29 @@
+{
+  "env": {
+    "EDITOR": "emacs -nw"
+  },
+  "permissions": {
+    "defaultMode": "auto"
+  },
+  "model": "opus",
+  "statusLine": {
+    "type": "command",
+    "command": "/home/caspar/.claude/scripts/ds-statusline.sh"
+  },
+  "enabledPlugins": {},
+  "extraKnownMarketplaces": {
+    "garden-skills": {
+      "source": {
+        "source": "github",
+        "repo": "conardli/garden-skills"
+      }
+    }
+  },
+  "syntaxHighlightingDisabled": false,
+  "autoUpdatesChannel": "stable",
+  "minimumVersion": "2.1.220",
+  "theme": "custom:whitesur-dark",
+  "editorMode": "normal",
+  "autoCompactEnabled": true,
+  "switchModelsOnFlag": false
+}

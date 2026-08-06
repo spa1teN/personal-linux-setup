@@ -1,0 +1,31 @@
+# Starship Prompt — Pastel Powerline (Lokal-Modus)
+# Kein User/Host, kein "in"
+
+format = "[](fg:#6B4226)$directory$custom[](fg:#6B4226)$line_break$character"
+
+[username]
+disabled = true
+
+[hostname]
+disabled = true
+
+[directory]
+truncation_length = 0
+truncate_to_repo = false
+format = "[$path ]($style)"
+style = "bg:#6B4226 bold cyan"
+
+[custom.git_section]
+command = '~/.local/bin/git-prompt-section'
+when = 'true'
+shell = 'bash'
+format = '$output'
+
+[character]
+success_symbol = "[❯](bold green)"
+error_symbol = "[❯](bold red)"
+
+[status]
+format = "[ $symbol$status ]($style)"
+style = "red"
+disabled = false
