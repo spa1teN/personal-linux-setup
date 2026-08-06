@@ -19,6 +19,7 @@ white='\033[37m'
 gold='\033[38;2;255;179;71m'
 red='\033[38;2;255;107;107m'
 cyan='\033[38;2;255;180;100m'
+purple='\033[38;2;167;139;250m'  # #A78BFA
 yellow='\033[33m'
 reset='\033[0m'
 
@@ -91,7 +92,7 @@ if [[ -n "$github_user" ]]; then
     # Dir→Github chevron
     echo -ne "${github_bg}${peach_fg}"
     # Github segment: "github:" white, username colored
-    echo -ne "${bold}${white} github:${cyan}${github_user} "
+    echo -ne "${bold}${white} github:${purple}${github_user} "
     # Github→Branch chevron
     echo -ne "${blue_bg}${github_fg}"
 else
