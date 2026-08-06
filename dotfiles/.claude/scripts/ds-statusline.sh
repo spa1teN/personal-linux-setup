@@ -31,10 +31,12 @@ line1="${line1}$(printf "\033[1;36m%s\033[22;39m" "$dir_short")"
 
 # --- Git info (starship-style) ---
 if git -C "$dir" rev-parse --git-dir >/dev/null 2>&1; then
-    # Branch (bold purple)
+    # Branch (bold purple), with latest tag in braces if present
     branch=$(git -C "$dir" branch --show-current 2>/dev/null)
     if [ -n "$branch" ]; then
         line1="${line1} on branch $(printf "\033[1;35m%s\033[22;39m" "$branch")"
+        tag=$(git -C "$dir" describe --tags --abbrev=0 2>/dev/null) && [[ -n "$tag" ]] && \
+            line1="${line1} $(printf '(\033[1;35m%s\033[22;39m)' "${tag#v}")"
     fi
 
     # State: rebase/merge/cherry-pick/bisect/revert (bold yellow)
