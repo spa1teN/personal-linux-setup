@@ -1,7 +1,7 @@
 # Starship Prompt — Pastel Powerline (Lokal-Modus)
 # Kein User/Host, kein "in"
 
-format = "[](fg:#6B4226)$directory$custom[](fg:#6B4226)$line_break$character"
+format = "[](fg:#6B4226)$directory$custom$line_break$character"
 
 [username]
 disabled = true
