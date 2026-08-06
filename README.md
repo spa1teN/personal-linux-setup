@@ -44,7 +44,7 @@ Use `--uninstall` to remove configs and restore backups.
 | `claude-statusline` | `~/.claude/scripts/ds-statusline.sh` | copy |
 | `claude-plugins` | `~/.claude/plugins/installed_plugins.json` | copy |
 | `claude-marketplaces` | `~/.claude/plugins/known_marketplaces.json` | copy |
-| `gpaste` | `~/.local/share/cinnamon/applets/gpaste-reloaded@feuerfuchs.eu/` | copy |
+| `gpaste` | `~/.local/share/cinnamon/applets/gpaste-reloaded@feuerfuchs.eu/` | clone + copy |
 | `tailscale-tray` | `~/.local/bin/tailscale-systray` | build from source |
 | `headset-battery` | `~/.local/share/cinnamon/applets/headset-battery@caspar/` + GNOME ext | copy |
 | `fan-control` | `/usr/local/bin/` + systemd units | copy (sudo) |

@@ -29,6 +29,7 @@ CLI_NEXTCLOUD_PW=""
 #       render       = template rendered to $HOME (for files with secrets)
 #       multi        = multiple files (:: separator)
 #       clone        = git clone into $HOME (src = URL, target = $HOME-relative path)
+#       clone_copy   = clone repo from URL, copy subdir to target
 #       binary_build = build from local source dir, copy binary + autostart to $HOME
 #       headset_battery = headset battery tray (Cinnamon applet + GNOME extension)
 #       fan_control  = fan control scripts + systemd units (requires sudo)
@@ -42,7 +43,7 @@ ITEMS=(
   "claude-statusline|dotfiles/.claude/scripts/ds-statusline.sh|.claude/scripts/ds-statusline.sh|copy"
   "claude-plugins|dotfiles/.claude/plugins/installed_plugins.json|.claude/plugins/installed_plugins.json|copy"
   "claude-marketplaces|dotfiles/.claude/plugins/known_marketplaces.json|.claude/plugins/known_marketplaces.json|copy"
-  "gpaste|$HOME/Projects/GPaste-Reloaded-Cinnamon-Applet/gpaste-reloaded@feuerfuchs.eu|.local/share/cinnamon/applets/gpaste-reloaded@feuerfuchs.eu|copy"
+  "gpaste|https://github.com/spa1teN/GPaste-Reloaded-Cinnamon-Applet.git|.local/share/cinnamon/applets/gpaste-reloaded@feuerfuchs.eu|clone_copy|gpaste-reloaded@feuerfuchs.eu"
   "tailscale-tray|$HOME/Projects/tailscale-systray-fork|.local/bin/tailscale-systray|binary_build"
   "headset-battery|dotfiles/headset-battery|.local/share/cinnamon/applets/headset-battery@caspar|headset_battery"
   "fan-control|dotfiles/fan-control|fan-control|fan_control"
@@ -468,11 +469,20 @@ install_binary_build() {
   src_dir="${src_dir/#\~/$HOME}"
 
   if [[ ! -d "$src_dir" ]]; then
-    error "Source directory not found: $src_dir"
-    printf "       Clone the fork first:\n"
-    printf "       git clone https://github.com/C10udburst/tailscale-systray %s\n" "$src_dir"
-    printf "       Then apply custom patches and vendor dependencies.\n"
-    return 1
+    # Auto-clone from GitHub if the local directory doesn't exist
+    local clone_url="https://github.com/spa1teN/tailscale-systray.git"
+    local clone_dir="$HOME/src/tailscale-systray"
+    if [[ ! -d "$clone_dir" ]]; then
+      info "cloning tailscale-systray fork..."
+      mkdir -p "$(dirname "$clone_dir")"
+      git clone "$clone_url" "$clone_dir" || {
+        error "Clone failed — clone manually:"
+        printf "       git clone %s %s\n" "$clone_url" "$src_dir"
+        return 1
+      }
+      log "cloned tailscale-systray → ~/src/tailscale-systray"
+    fi
+    src_dir="$clone_dir"
   fi
 
   local built_binary="$src_dir/$binary_name"
@@ -536,6 +546,45 @@ DESKTOP_EOF
       log "autostart entry already exists: ~/.config/autostart/${binary_name}.desktop"
     fi
   fi
+}
+
+# ==============================================================================
+# Clone repo from URL and copy subdirectory to target
+# $1 = git URL, $2 = absolute path in $HOME (destination), $3 = subpath within repo
+# ==============================================================================
+install_clone_copy() {
+  local url="$1"
+  local dst="$2"
+  local sub="$3"
+  local dst_short="${dst#$HOME/}"
+  local repo_name
+  repo_name="$(basename "${url%.git}")"
+  local clone_dir="$HOME/src/$repo_name"
+
+  # Clone/pull the repo
+  if [[ -d "$clone_dir/.git" ]]; then
+    log "pulling $repo_name..."
+    git -C "$clone_dir" pull --ff-only 2>/dev/null || true
+  else
+    if [[ -d "$clone_dir" ]]; then
+      warn "$clone_dir exists but is not a git repo — cannot clone"
+      return 1
+    fi
+    mkdir -p "$(dirname "$clone_dir")"
+    git clone "$url" "$clone_dir" || { error "clone failed for $url"; return 1; }
+    log "cloned $repo_name → ~/src/$repo_name"
+  fi
+
+  local src_dir="$clone_dir/$sub"
+  if [[ ! -d "$src_dir" ]]; then
+    error "subpath '$sub' not found in cloned repo ($clone_dir)"
+    return 1
+  fi
+
+  # Skip pull messages from counting
+  local before_installed=$INSTALLED
+  copy_file "$src_dir" "$dst"
+  # copy_file incremented INSTALLED or SKIPPED — leave it
 }
 
 # ==============================================================================
@@ -737,6 +786,9 @@ install_item() {
       clone)
         clone_repo "$_src" "$abs_dst" "$_clone_sub"
         ;;
+      clone_copy)
+        install_clone_copy "$_src" "$abs_dst" "$_clone_sub"
+        ;;
       binary_build)
         install_binary_build "$_src" "$abs_dst"
         ;;
@@ -808,6 +860,15 @@ uninstall_item() {
           ((UNINSTALLED++)) || true
         elif [[ -d "$abs_dst" ]]; then
           warn "$dst_short exists but is not a git repo — not removing"
+        else
+          info "not installed: $dst_short"
+        fi
+        ;;
+      clone_copy)
+        if [[ -e "$abs_dst" ]]; then
+          rm -rf "$abs_dst"
+          log "removed: $dst_short"
+          ((UNINSTALLED++)) || true
         else
           info "not installed: $dst_short"
         fi
@@ -971,6 +1032,15 @@ list_items() {
           status="not installed"
         fi
         ;;
+      clone_copy)
+        if [[ -d "$dst" ]] && [[ ! -L "$dst" ]]; then
+          status="installed"
+        elif [[ -e "$dst" ]]; then
+          status="exists (unexpected)"
+        else
+          status="not installed"
+        fi
+        ;;
       binary_build)
         if [[ -f "$dst" ]]; then
           status="installed"
@@ -1096,6 +1166,10 @@ store_item() {
           sudo cp "/etc/systemd/system/$f" "$src/$f"
           log "stored /etc/systemd/system/$f → dotfiles/fan-control/"
         done
+        ;;
+      clone_copy)
+        error "Cannot store '$name' — config is cloned from git, not stored in repo"
+        return 1
         ;;
       *)
         error "Cannot store '$name' — only copy/multi configs support --store"
