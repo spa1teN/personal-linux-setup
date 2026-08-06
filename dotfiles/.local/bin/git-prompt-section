@@ -47,6 +47,15 @@ get_branch() {
     return 1
 }
 
+get_release() {
+    local tag
+    tag=$(git describe --tags --abbrev=0 2>/dev/null) || return 1
+    # Strip leading v if present (v1.2.3 → 1.2.3)
+    tag="${tag#v}"
+    [[ -n "$tag" ]] && echo "$tag" && return 0
+    return 1
+}
+
 # ── Main ──────────────────────────────────────────────────────────────
 
 if ! git rev-parse --is-inside-work-tree &>/dev/null; then
@@ -59,9 +68,13 @@ fi
 # Dir→branch chevron
 echo -ne "${blue_bg}${peach_fg}"
 
-# " on branch " white, branch name gold
+# " on branch " white, branch name gold, release in braces if tagged
 branch=$(get_branch)
-echo -ne "${bold}${white} on branch ${gold}${branch} "
+if release=$(get_release); then
+    echo -ne "${bold}${white} on branch ${gold}${branch} ${white}(${gold}${release}${white}) "
+else
+    echo -ne "${bold}${white} on branch ${gold}${branch} "
+fi
 
 # Git-State (rebasing etc)
 state=$(get_git_state)
