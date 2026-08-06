@@ -4,7 +4,7 @@
       "source": "github",
       "repo": "anthropics/claude-plugins-official"
     },
-    "installLocation": "/home/caspar/.claude/plugins/marketplaces/claude-plugins-official",
+    "installLocation": "{{HOME}}/.claude/plugins/marketplaces/claude-plugins-official",
     "lastUpdated": "2026-08-06T03:07:03.367Z"
   },
   "garden-skills": {
@@ -12,7 +12,7 @@
       "source": "github",
       "repo": "conardli/garden-skills"
     },
-    "installLocation": "/home/caspar/.claude/plugins/marketplaces/garden-skills",
+    "installLocation": "{{HOME}}/.claude/plugins/marketplaces/garden-skills",
     "lastUpdated": "2026-07-29T17:17:03.434Z"
   }
 }

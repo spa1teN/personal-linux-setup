@@ -153,16 +153,25 @@ copy_file() {
 
   mkdir -p "$(dirname "$dst")"
 
+  # If source is a {{HOME}} template, render it for comparison
+  local src_cmp="$src"
+  if grep -q '{{HOME}}' "$src" 2>/dev/null; then
+    src_cmp=$(mktemp)
+    sed "s|{{HOME}}|$HOME|g" "$src" > "$src_cmp"
+  fi
+
   # Already up to date?
   if [[ -f "$src" ]] && [[ -f "$dst" ]]; then
-    if cmp -s "$src" "$dst" 2>/dev/null; then
+    if cmp -s "$src_cmp" "$dst" 2>/dev/null; then
       log "already up to date: $dst_short"
+      [[ "$src_cmp" != "$src" ]] && rm -f "$src_cmp"
       ((SKIPPED++)) || true
       return 0
     fi
   elif [[ -d "$src" ]] && [[ -d "$dst" ]]; then
-    if diff -rq "$src" "$dst" >/dev/null 2>&1; then
+    if diff -rq "$src_cmp" "$dst" >/dev/null 2>&1; then
       log "already up to date: $dst_short"
+      [[ "$src_cmp" != "$src" ]] && rm -f "$src_cmp"
       ((SKIPPED++)) || true
       return 0
     fi
@@ -185,6 +194,12 @@ copy_file() {
   else
     cp "$src" "$dst"
   fi
+
+  # Apply {{HOME}} substitution if this is a template
+  if [[ "$src_cmp" != "$src" ]]; then
+    mv "$src_cmp" "$dst"
+  fi
+
   log "copied $dst_short"
   ((INSTALLED++)) || true
   return 0
@@ -1104,15 +1119,22 @@ list_items() {
         if [[ "$_src" == /* ]] || [[ "$_src" == \$HOME* ]]; then
           src_full="${_src//\$HOME/$HOME}"
         fi
-        if [[ -f "$dst" ]] && cmp -s "$src_full" "$dst" 2>/dev/null; then
+        # If source is a {{HOME}} template, render for comparison
+        local cmp_src="$src_full"
+        if grep -q '{{HOME}}' "$src_full" 2>/dev/null; then
+          cmp_src=$(mktemp)
+          sed "s|{{HOME}}|$HOME|g" "$src_full" > "$cmp_src"
+        fi
+        if [[ -f "$dst" ]] && cmp -s "$cmp_src" "$dst" 2>/dev/null; then
           status="installed"
-        elif [[ -d "$dst" ]] && diff -rq "$src_full" "$dst" >/dev/null 2>&1; then
+        elif [[ -d "$dst" ]] && diff -rq "$cmp_src" "$dst" >/dev/null 2>&1; then
           status="installed"
         elif [[ -e "$dst" ]]; then
           status="modified"
         else
           status="not installed"
         fi
+        [[ "$cmp_src" != "$src_full" ]] && rm -f "$cmp_src"
         ;;
       render)
         if [[ -f "$dst" ]] && [[ ! -L "$dst" ]]; then
@@ -1134,7 +1156,11 @@ list_items() {
         count_total=${#dsts[@]}
         for i in "${!dsts[@]}"; do
           local sd="$HOME/${dsts[$i]}"
-          if cmp -s "$REPO_DIR/${srcs[$i]}" "$sd" 2>/dev/null; then
+          local s="$REPO_DIR/${srcs[$i]}"
+          # If source is a {{HOME}} template, render for comparison
+          if grep -q '{{HOME}}' "$s" 2>/dev/null; then
+            sed "s|{{HOME}}|$HOME|g" "$s" | cmp -s - "$sd" 2>/dev/null && ((count_ok++)) || true
+          elif cmp -s "$s" "$sd" 2>/dev/null; then
             ((count_ok++)) || true
           fi
         done
@@ -1241,7 +1267,11 @@ store_item() {
         if [[ -d "$home_src" ]]; then
           cp -r "$home_src" "$repo_dst"
         else
-          cp "$home_src" "$repo_dst"
+          if grep -q '{{HOME}}' "$repo_dst" 2>/dev/null; then
+            sed "s|$HOME|{{HOME}}|g" "$home_src" > "$repo_dst"
+          else
+            cp "$home_src" "$repo_dst"
+          fi
         fi
         log "stored $HOME/$_target → dotfiles/$_src"
         ;;
@@ -1256,7 +1286,11 @@ store_item() {
             return 1
           fi
           mkdir -p "$(dirname "$repo_dst")"
-          cp "$home_src" "$repo_dst"
+          if grep -q '{{HOME}}' "$repo_dst" 2>/dev/null; then
+            sed "s|$HOME|{{HOME}}|g" "$home_src" > "$repo_dst"
+          else
+            cp "$home_src" "$repo_dst"
+          fi
           log "stored ${dsts[$i]} → dotfiles/${srcs[$i]}"
         done
         ;;

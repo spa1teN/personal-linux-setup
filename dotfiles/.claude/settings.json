@@ -8,7 +8,7 @@
   "model": "opus",
   "statusLine": {
     "type": "command",
-    "command": "/home/caspar/.claude/scripts/ds-statusline.sh"
+    "command": "{{HOME}}/.claude/scripts/ds-statusline.sh"
   },
   "enabledPlugins": {},
   "extraKnownMarketplaces": {
