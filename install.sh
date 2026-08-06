@@ -1600,6 +1600,10 @@ main() {
         if [[ -z "${_STATE_ACTIVE[$_name]:-}" ]]; then
           continue
         fi
+        case "$_name" in
+          gpaste|headset-battery|tailscale-tray|fan-control|amdgpu-fix)
+            continue ;;
+        esac
         info "checking $_name..."
         install_item "$_name"
       done
