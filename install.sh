@@ -19,6 +19,7 @@ INSTALLED=0
 BACKED_UP=0
 SKIPPED=0
 UNINSTALLED=0
+declare -A _DEPS_DONE=()
 
 # Secrets passed via CLI flags (empty = prompt or reuse from existing file)
 CLI_TOKEN=""
@@ -274,6 +275,11 @@ install_deps() {
   local filter="$1"
   local installed_any=0
 
+  # Skip if this config's deps were already satisfied in this run
+  if [[ -n "${_DEPS_DONE[$filter]:-}" ]]; then
+    return 0
+  fi
+
   needs_sudo() {
     if [[ $EUID -eq 0 ]]; then
       return 1
@@ -328,6 +334,8 @@ install_deps() {
           log "installed ble.sh" || warn "failed to install ble.sh"
         installed_any=1
       fi
+      _DEPS_DONE[bashrc]=1
+      _DEPS_DONE[bash_aliases]=1
       ;;
     starship)
       if ! command -v starship &>/dev/null; then
@@ -339,6 +347,7 @@ install_deps() {
       else
         log "already installed: starship ($(starship --version 2>/dev/null || true))"
       fi
+      _DEPS_DONE[starship]=1
       ;;
     gpaste)
       if ! command -v gpaste-client &>/dev/null; then
@@ -348,6 +357,7 @@ install_deps() {
       else
         log "already installed: gpaste"
       fi
+      _DEPS_DONE[gpaste]=1
       ;;
     headset-battery)
       if [[ -f /usr/local/bin/headsetcontrol ]] || command -v headsetcontrol &>/dev/null; then
@@ -372,6 +382,7 @@ install_deps() {
           installed_any=1
         fi
       fi
+      _DEPS_DONE[headset-battery]=1
       ;;
     fan-control)
       if lsmod | grep -q nct6687; then
@@ -380,6 +391,7 @@ install_deps() {
         warn "nct6687 module not loaded — fan control won't work"
         info "DKMS driver: https://github.com/Fred78290/nct6687d"
       fi
+      _DEPS_DONE[fan-control]=1
       ;;
     tailscale-tray)
       if command -v wl-copy &>/dev/null; then
@@ -401,6 +413,7 @@ install_deps() {
       else
         warn "tailscale not running — operator check skipped"
       fi
+      _DEPS_DONE[tailscale-tray]=1
       ;;
   esac
 
