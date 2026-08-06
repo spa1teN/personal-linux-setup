@@ -303,6 +303,8 @@ install_deps() {
 
   case "$filter" in
     bashrc|bash_aliases)
+      _apt_install make
+      _apt_install git
       _apt_install gawk
       if [[ ! -f /usr/share/doc/fzf/examples/key-bindings.bash ]]; then
         _apt_install fzf
