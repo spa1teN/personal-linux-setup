@@ -10,7 +10,7 @@ config.tab_bar_at_bottom = false
 config.hide_tab_bar_if_only_one_tab = false
 config.tab_max_width = 999
 
-config.window_background_image = '/home/caspar/.wezterm/bg1.jpg'
+config.window_background_image = '.wezterm/bg1.jpg'
 
 -- Auto-detect colors from the current GTK theme
 local function gtk_theme_color(var_name)

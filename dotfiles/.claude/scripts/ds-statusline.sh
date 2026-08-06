@@ -27,12 +27,15 @@ gh_fg=$'\033[38;2;80;60;15m\033[1m';      branch_fg=$'\033[38;2;30;75;25m\033[1m
 release_fg=$'\033[38;2;55;90;40m\033[1m'; status_fg=$'\033[38;2;20;55;85m\033[1m'
 ram_fg=$'\033[38;2;35;25;80m\033[1m';     state_fg=$'\033[38;2;30;70;80m\033[1m'
 reset=$'\033[0m'
+defbg=$'\033[49m'   # default background
 
 is_ssh() { [ -n "$SSH_CONNECTION" ] || [ -n "$SSH_TTY" ]; }
 is_root() { [ "$(id -u)" -eq 0 ]; }
 
 # ── OS logo ─────────────────────────────────────────────────────────────
-if [ -f /etc/os-release ]; then
+if [ -f /proc/device-tree/model ] && grep -qi 'raspberry pi' /proc/device-tree/model 2>/dev/null; then
+    os_logo=$'\U0000E722'    #  nf-dev-raspberry_pi
+elif [ -f /etc/os-release ]; then
     . /etc/os-release 2>/dev/null
     case "${ID,,}" in
         linuxmint) os_logo=$'\U000F08ED' ;;  ubuntu) os_logo=$'\U0000F31B' ;;
@@ -114,7 +117,7 @@ done < /proc/meminfo
 ram=''; [ -n "$mt" ] && [ -n "$ma" ] && [ "$mt" -gt 0 ] && ram="$(( 100 - (ma * 100 / mt) ))%"
 
 # ── Assemble Line 1 ─────────────────────────────────────────────────────
-line1="${BG}${c1}${C1}"
+line1="${c1}${C1}"
 if is_ssh || is_root; then
     line1+="${user_fg}$(whoami) ${black}${os_logo} ${host_fg}$(hostname -s) "
 else
@@ -138,7 +141,7 @@ elif [ -n "$git_state" ]; then
 else line1+=" "; fi
 line1+="${C6}${c5}"
 line1+=" ${black}"$'\U000F035B'" ${ram_fg}${ram} "
-line1+="${c6}${reset}"
+line1+="${defbg}${c6}${reset}"
 
 # --- Model name ---
 model=$(echo "$input" | python3 -c "

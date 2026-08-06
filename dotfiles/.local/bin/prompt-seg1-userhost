@@ -17,7 +17,9 @@ black='\033[38;2;24;24;24m\033[1m'       # near-black for symbols
 user=$(whoami)
 host=$(hostname -s 2>/dev/null || hostname | cut -d. -f1)
 
-if [ -f /etc/os-release ]; then
+if [ -f /proc/device-tree/model ] && grep -qi 'raspberry pi' /proc/device-tree/model 2>/dev/null; then
+    logo=$'\U0000E722'    #  nf-dev-raspberry_pi
+elif [ -f /etc/os-release ]; then
     . /etc/os-release 2>/dev/null
     case "${ID,,}" in
         linuxmint) logo=$'\U000F08ED' ;;
@@ -34,7 +36,7 @@ sshing=''
 # ── Output ────────────────────────────────────────────────────────────────
 printf '%b' "${c1_fg}${c1_bg}"
 if [ -n "$sshing" ]; then
-    printf '%b' "${user_fg}${user} ${black}${logo} ${host_fg}${host} "
+    printf '%b' "${user_fg}${user} ${black}${logo} ${host_fg}${host}"
 else
     printf '%b' "${black}${logo} "
 fi

@@ -56,7 +56,7 @@ _state_remove() { _state_load; unset '_STATE_ACTIVE[$1]'; _state_save; }
 #       fan_control  = fan control scripts + systemd units (requires sudo)
 #       amdgpu_fix   = add amdgpu.dcdebugmask=0x12 kernel param to GRUB (requires sudo)
 ITEMS=(
-  "wezterm|dotfiles/.wezterm.lua|.wezterm.lua|copy"
+  "wezterm|dotfiles/.wezterm.lua::dotfiles/.wezterm|.wezterm.lua::.wezterm|multi"
   "tmux|dotfiles/.tmux.conf|.tmux.conf|copy"
   "bashrc|dotfiles/.bashrc|.bashrc|copy"
   "bash_aliases|dotfiles/.bash_aliases.template|.bash_aliases|render"
