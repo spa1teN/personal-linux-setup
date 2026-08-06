@@ -34,6 +34,7 @@ CLI_NEXTCLOUD_PW=""
 #       binary_build = build from local source dir, copy binary + autostart to $HOME
 #       headset_battery = headset battery tray (Cinnamon applet + GNOME extension)
 #       fan_control  = fan control scripts + systemd units (requires sudo)
+#       amdgpu_fix   = add amdgpu.dcdebugmask=0x12 kernel param to GRUB (requires sudo)
 ITEMS=(
   "wezterm|dotfiles/.wezterm.lua|.wezterm.lua|copy"
   "tmux|dotfiles/.tmux.conf|.tmux.conf|copy"
@@ -48,6 +49,7 @@ ITEMS=(
   "tailscale-tray|$HOME/Projects/tailscale-systray-fork|.local/bin/tailscale-systray|binary_build"
   "headset-battery|dotfiles/headset-battery|.local/share/cinnamon/applets/headset-battery@caspar|headset_battery"
   "fan-control|dotfiles/fan-control|fan-control|fan_control"
+  "amdgpu-fix|/etc/default/grub|/etc/default/grub|amdgpu_fix"
 )
 
 # --- Output helpers ---
@@ -98,6 +100,7 @@ Configs (colored = supports --enable/--disable):
   gpaste                   GPaste-Reloaded Cinnamon applet (custom fork)
   headset-battery           Headset battery tray (Cinnamon + GNOME)
   fan-control               MSI B550 fan quiet setup (requires sudo)
+  amdgpu-fix                 AMD GPU freeze fix — adds amdgpu.dcdebugmask=0x12 to GRUB
 EOF
   printf '  %b%s%b\n' "$CYAN" "tailscale-tray           Tailscale systray (custom fork, built from source)" "$NC"
 }
@@ -394,6 +397,15 @@ install_deps() {
         info "DKMS driver: https://github.com/Fred78290/nct6687d"
       fi
       _DEPS_DONE[fan-control]=1
+      ;;
+    amdgpu-fix)
+      if lsmod | grep -q amdgpu; then
+        log "amdgpu module loaded — fix applies to this system"
+      else
+        warn "amdgpu module not loaded — this system likely doesn't need this fix"
+        info "If this is an AMD GPU system, the module may load later in boot"
+      fi
+      _DEPS_DONE[amdgpu-fix]=1
       ;;
     tailscale-tray)
       if command -v wl-copy &>/dev/null; then
@@ -762,6 +774,54 @@ install_fan_control() {
 }
 
 # ==============================================================================
+# Install amdgpu freeze fix — add amdgpu.dcdebugmask=0x12 to GRUB
+# $1 = not used (source is /etc/default/grub, resolved from ITEMS)
+# ==============================================================================
+install_amdgpu_fix() {
+  local grub_file="/etc/default/grub"
+  local param="amdgpu.dcdebugmask=0x12"
+
+  if [[ ! -f "$grub_file" ]]; then
+    error "$grub_file not found — cannot add kernel parameter"
+    return 1
+  fi
+
+  if [[ $EUID -ne 0 ]]; then
+    warn "amdgpu-fix needs sudo to modify $grub_file and run update-grub"
+  fi
+
+  # Already applied?
+  if grep -q "^GRUB_CMDLINE_LINUX_DEFAULT=.*$param" "$grub_file" 2>/dev/null; then
+    log "already applied: $param in $grub_file"
+    ((SKIPPED++)) || true
+    return 0
+  fi
+
+  # Back up GRUB file
+  local grub_backup="$BACKUP_DIR/etc/default/grub"
+  mkdir -p "$(dirname "$grub_backup")"
+  sudo cp "$grub_file" "$grub_backup"
+  log "backed up $grub_file → $grub_backup"
+  ((BACKED_UP++)) || true
+
+  # Add parameter before the closing quote
+  sudo sed -i "s|^GRUB_CMDLINE_LINUX_DEFAULT=\"\(.*\)\"|GRUB_CMDLINE_LINUX_DEFAULT=\"\1 $param\"|" "$grub_file"
+  log "added $param to $grub_file"
+
+  # Update GRUB
+  if command -v update-grub &>/dev/null; then
+    sudo update-grub 2>/dev/null && log "ran update-grub" || warn "update-grub failed"
+  elif command -v grub-mkconfig &>/dev/null; then
+    sudo grub-mkconfig -o /boot/grub/grub.cfg 2>/dev/null && \
+      log "ran grub-mkconfig" || warn "grub-mkconfig failed"
+  else
+    warn "Could not find update-grub or grub-mkconfig — you may need to run it manually"
+  fi
+
+  ((INSTALLED++)) || true
+}
+
+# ==============================================================================
 # Parse one ITEMS entry and return fields
 # $1 = item string, outputs globals: _name, _src, _target, _kind, _clone_sub
 # ==============================================================================
@@ -834,6 +894,9 @@ install_item() {
         ;;
       fan_control)
         install_fan_control "$_src"
+        ;;
+      amdgpu_fix)
+        install_amdgpu_fix
         ;;
       *)
         error "Unknown kind '$_kind' for $name"
@@ -944,6 +1007,23 @@ uninstall_item() {
           ((UNINSTALLED++)) || true
         else
           info "not installed"
+        fi
+        ;;
+      amdgpu_fix)
+        local grub_file="/etc/default/grub"
+        local param="amdgpu.dcdebugmask=0x12"
+        if [[ ! -f "$grub_file" ]]; then
+          info "not installed: $grub_file not found"
+        elif grep -q "^GRUB_CMDLINE_LINUX_DEFAULT=.*$param" "$grub_file" 2>/dev/null; then
+          warn "amdgpu-fix modifies $grub_file — removing kernel parameter"
+          sudo sed -i "s| $param||g; s|$param ||g; s|\"$param\"|\"\"|g" "$grub_file"
+          log "removed $param from $grub_file"
+          if command -v update-grub &>/dev/null; then
+            sudo update-grub 2>/dev/null && log "ran update-grub" || warn "update-grub failed"
+          fi
+          ((UNINSTALLED++)) || true
+        else
+          info "not installed: $param not found in $grub_file"
         fi
         ;;
       fan_control)
@@ -1110,11 +1190,24 @@ list_items() {
           status="not installed"
         fi
         ;;
+      amdgpu_fix)
+        if grep -q "^GRUB_CMDLINE_LINUX_DEFAULT=.*amdgpu.dcdebugmask=0x12" /etc/default/grub 2>/dev/null; then
+          status="applied"
+        elif [[ -f /etc/default/grub ]]; then
+          status="not applied"
+        else
+          status="not installed"
+        fi
+        ;;
       *)
         status="unknown kind"
         ;;
     esac
-    printf "  %-25s %-10s %s → ~/%s\n" "$_name" "$_kind" "$status" "$_target"
+    if [[ "$_kind" == "amdgpu_fix" ]]; then
+      printf "  %-25s %-10s %s → %s\n" "$_name" "$_kind" "$status" "/etc/default/grub"
+    else
+      printf "  %-25s %-10s %s → ~/%s\n" "$_name" "$_kind" "$status" "$_target"
+    fi
   done
   echo
 }
@@ -1206,6 +1299,10 @@ store_item() {
         ;;
       clone_copy)
         error "Cannot store '$name' — config is cloned from git, not stored in repo"
+        return 1
+        ;;
+      amdgpu_fix)
+        error "Cannot store '$name' — config modifies system files, not stored in repo"
         return 1
         ;;
       *)
