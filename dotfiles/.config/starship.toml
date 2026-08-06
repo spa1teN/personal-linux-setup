@@ -5,7 +5,8 @@ format = "[](fg:#5C2D6B)$username[ @ ](bg:#5C2D6B bold white)$hostname[](b
 
 [username]
 format = "[$user]($style)"
-style = "bg:#5C2D6B bold yellow"
+style_user = "bg:#5C2D6B bold yellow"
+style_root = "bg:#5C2D6B bold red"
 
 [hostname]
 format = "[$hostname ]($style)"
