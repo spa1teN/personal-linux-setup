@@ -3,12 +3,13 @@
     "EDITOR": "emacs -nw"
   },
   "permissions": {
-    "defaultMode": "default"
+    "defaultMode": "auto"
   },
   "model": "opus",
   "statusLine": {
     "type": "command",
-    "command": "{{HOME}}/.claude/scripts/ds-statusline.sh"
+    "command": "{{HOME}}/.claude/scripts/ds-statusline.sh",
+    "refreshInterval": 2
   },
   "enabledPlugins": {},
   "extraKnownMarketplaces": {
