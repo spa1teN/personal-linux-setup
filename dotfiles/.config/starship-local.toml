@@ -1,7 +1,7 @@
 # Starship Prompt — Rainbow Powerline (Local)
 # Same as starship.toml — the scripts handle local vs SSH internally
 
-format = "$custom$fill$status$time$line_break$character"
+format = "$custom$fill$status$line_break$character"
 
 # ── Segment 1: Username · OS logo · Hostname ─────────────────────────────
 [custom.seg1_userhost]
@@ -43,7 +43,7 @@ shell = 'bash'
 format = '$output'
 ignore_timeout = true
 
-# ── Segment 6: Environments ──────────────────────────────────────────────
+# ── Segment 6: Clock ─────────────────────────────────────────────────────
 [custom.seg6_env]
 command = '~/.local/bin/prompt-seg6-env'
 when = 'true'
@@ -56,9 +56,9 @@ ignore_timeout = true
 success_symbol = "[❯](bold green)"
 error_symbol = "[❯](bold red)"
 
-# ── Clock (right-aligned) ────────────────────────────────────────────────
+# ── Clock (right-aligned, now in segment 6) ──────────────────────────────
 [time]
-disabled = false
+disabled = true
 format = "[ $time ](fg:#888888)"
 time_format = "%H:%M"
 

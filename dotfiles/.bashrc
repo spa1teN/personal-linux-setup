@@ -138,3 +138,22 @@ source ~/.local/share/ble.sh/out/ble.sh
 bleopt exec_exit_mark=
 bleopt exec_errexit_mark=
 bleopt prompt_eol_mark=
+
+# Let the prompt script manage the terminal title (disables ble.sh's title override)
+bleopt prompt_xterm_title=
+
+# Helper: resolve alias to the actual binary being run
+_resolve_cmd() {
+  local cmd="$1" a
+  a=$(alias "$cmd" 2>/dev/null) || { printf '%s\n' "$cmd"; return; }
+  a="${a#*=\'}"
+  a="${a%%\'*}"
+  printf '%s\n' "${a%% *}"
+}
+
+# Set WezTerm pane title to program + arguments BEFORE each command
+blehook PREEXEC!='cmd=$(_resolve_cmd "$1"); printf "\033]0;%s\033\\" "$cmd${*:2:+ ${*:2}}"'
+
+
+# Reset WezTerm pane title to CWD path AFTER each command (back to path display)
+blehook PRECMD!='printf "\033]0;%s\033\\" "${PWD/#$HOME/\~}"'

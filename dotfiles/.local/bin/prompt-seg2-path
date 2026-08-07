@@ -23,11 +23,30 @@ dir="${PWD/#$HOME/\~}"
 declare -A icons=(
     [Downloads]=$'\U000F01DA'    # 󰇚
     [Documents]=$'\U000F0219'    # 󰈙
+    [Dokumente]=$'\U000F0219'    # 󰈙 (same as Documents)
     [Pictures]=$'\U0000F03E'     # 
+    [Bilder]=$'\U0000F03E'       #  (same as Pictures)
     [Videos]=$'\U000F0567'       # 󰕧
     [Music]=$'\U000F075A'        # 󰝚
     [Desktop]=$'\U0000F108'      # 
+    [Telegram]=$'\U0000E217'     # 
+    [Screenshots]=$'\U0000F50C'  # 
+    [Backups]=$'\U000F006F'      # 󰙯
+    [Backup]=$'\U000F006F'       # 󰙯 (same as Backups)
+    [Kontakte]=$'\U0001F04CB'    # 󿻋
+    [Hörbücher]=$'\U0000E638'    # 
+    [Notizen]=$'\U000F039A'      # 󰞚
+    [Folien]=$'\U0000E67D'       # 
+    [setup]=$'\U0000EB51'        # 
+    [storage]=$'\U0000F1C0'      # 
+    [ISOs]=$'\U000F11F0'         # 󰏰
+    [SteamLibrary]=$'\U0000ED29' # 
     [Woelkchen]=$'\U0000F0C2'    #  fa-cloud
+    [nextcloud]=$'\U0000F0C2'    #  (same as Woelkchen)
+    [roaringbot]=$'\U0000EB1E'   # 
+    [Tausendsassa]=$'\U0000F1FF' # 
+    [dashboard]=$'\U0000EACD'    # 
+    [website]=$'\U0001F059F'     # 󿖟
     [Uni]=$'\U0000F19C'          #  university
 )
 
@@ -45,19 +64,34 @@ for part in "${parts[@]}"; do
     fi
 done
 
-# Rejoin with / — use spaced slash when adjacent to an icon
+# Rejoin with / — spaced slashes after icons for the prompt,
+# tight slashes for the tab title (where spaces look wrong)
 joined=''
+joined_tight=''
 for ((i=0; i<${#result[@]}; i++)); do
     if [ "$i" -eq 0 ]; then
         joined="${result[$i]}"
+        joined_tight="${result[$i]}"
     else
         sep='/'
         if [[ "${is_icon[$i-1]}" == '1' ]]; then
             sep=' /'
         fi
         joined="${joined}${sep}${result[$i]}"
+        joined_tight="${joined_tight}/${result[$i]}"
     fi
 done
+
+# ── Set WezTerm pane title to formatted path (for tab bar) ───────────────
+# Uses tight slashes — the extra spaces look wrong in the compact tab bar.
+if [ -n "$sshing" ]; then
+    printf '\033]0;in %s\033\\' "$joined_tight"
+else
+    printf '\033]0;%s\033\\' "$joined_tight"
+fi
+
+# Also emit OSC 7 for CWD tracking (belt-and-suspenders)
+printf '\033]7;file://%s%s\033\\' "$HOSTNAME" "$PWD"
 
 # ── Output ────────────────────────────────────────────────────────────────
 printf '%b' "${c2_bg} "
@@ -66,4 +100,4 @@ if [ -n "$sshing" ]; then
 else
     printf '%b' "${path_fg}${joined} "
 fi
-printf '%b' "${c3_bg}${c2_fg}"
+printf '%b' " ${c3_bg}${c2_fg}"

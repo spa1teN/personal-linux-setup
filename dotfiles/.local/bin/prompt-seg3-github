@@ -10,7 +10,7 @@ c4_bg='\033[48;2;169;212;142m'   # segment 4 bg  #a9d48e
 c3_fg='\033[38;2;227;201;145m'   # segment 3 fg (for chevron)
 user_fg='\033[38;2;80;60;15m\033[1m'     # bold dark amber
 black='\033[38;2;24;24;24m\033[1m'       # near-black for logo
-gh_logo=$'\U000F02A4'                     # 󰊤 nf-md-github
+gh_logo=$'\U0000EB00'                     #  nf-md-github
 
 # ── Detect GitHub user ───────────────────────────────────────────────────
 github_user=''
@@ -36,7 +36,7 @@ fi
 # ── Output ────────────────────────────────────────────────────────────────
 printf '%b' "${c3_bg}"
 if [ -n "$github_user" ]; then
-    printf '%b' " ${black}${gh_logo} ${user_fg}${github_user} "
+    printf '%b' " ${black}${gh_logo}  ${user_fg}${github_user} "
 else
     printf '%b' ' '  # slim band — always visible
 fi

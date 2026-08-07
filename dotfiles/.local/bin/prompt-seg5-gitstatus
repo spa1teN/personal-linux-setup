@@ -60,7 +60,7 @@ parts=()
 printf '%b' "${c5_bg}"
 if (( ${#parts[@]} )); then
     IFS=' '
-    printf '%b' "${status_fg} ❨${parts[*]}❩ "
+    printf '%b' "${status_fg} ${parts[*]} "
 else
     printf '%b' ' '  # clean repo — slim band
 fi

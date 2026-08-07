@@ -40,4 +40,4 @@ if [ -n "$sshing" ]; then
 else
     printf '%b' "${black}${logo} "
 fi
-printf '%b' "${c2_bg}${c1_fg}"
+printf '%b' " ${c2_bg}${c1_fg}"

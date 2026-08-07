@@ -16,12 +16,14 @@ dir_short=$(printf '%s' "$dir" | sed "s|^$home_esc|~|")
 # Six segments matching ~/.config/starship.toml
 
 # Background colors — $'...' produces actual ESC bytes, not literal \033
-C1=$'\033[48;2;232;132;137m';   C2=$'\033[48;2;239;159;122m';   C3=$'\033[48;2;227;201;145m'
-C4=$'\033[48;2;169;212;142m';   C5=$'\033[48;2;137;191;220m';   C6=$'\033[48;2;189;186;241m'
+C1=$'\033[48;2;212;112;117m';   C2=$'\033[48;2;219;139;102m';   C3=$'\033[48;2;207;181;125m'
+C4=$'\033[48;2;149;192;122m';   C5=$'\033[48;2;117;171;200m';   C6=$'\033[48;2;169;166;221m'
 BG=$'\033[48;2;42;45;52m'
-c1=$'\033[38;2;232;132;137m';   c2=$'\033[38;2;239;159;122m';   c3=$'\033[38;2;227;201;145m'
-c4=$'\033[38;2;169;212;142m';   c5=$'\033[38;2;137;191;220m';   c6=$'\033[38;2;189;186;241m'
-black=$'\033[38;2;24;24;24m\033[1m';      user_fg=$'\033[38;2;110;25;28m\033[1m'
+c1=$'\033[38;2;212;112;117m';   c2=$'\033[38;2;219;139;102m';   c3=$'\033[38;2;207;181;125m'
+c4=$'\033[38;2;149;192;122m';   c5=$'\033[38;2;117;171;200m';   c6=$'\033[38;2;169;166;221m'
+black=$'\033[38;2;24;24;24m\033[1m';      white=$'\033[38;2;255;255;255m\033[1m'
+white_bg=$'\033[48;2;255;255;255m'
+user_fg=$'\033[38;2;110;25;28m\033[1m'
 host_fg=$'\033[38;2;80;25;65m\033[1m';    path_fg=$'\033[38;2;90;50;25m\033[1m'
 gh_fg=$'\033[38;2;80;60;15m\033[1m';      branch_fg=$'\033[38;2;30;75;25m\033[1m'
 release_fg=$'\033[38;2;55;90;40m\033[1m'; status_fg=$'\033[38;2;20;55;85m\033[1m'
@@ -38,16 +40,23 @@ if [ -f /proc/device-tree/model ] && grep -qi 'raspberry pi' /proc/device-tree/m
 elif [ -f /etc/os-release ]; then
     . /etc/os-release 2>/dev/null
     case "${ID,,}" in
-        linuxmint) os_logo=$'\U000F08ED' ;;  ubuntu) os_logo=$'\U0000F31B' ;;
+        linuxmint) os_logo=$'\U0000F30E' ;;  ubuntu) os_logo=$'\U0000F31B' ;;
         *)         os_logo=$'\U0000F31A' ;;
     esac
 else os_logo=$'\U0000F31A'; fi
 
 # ── Directory icon substitution ─────────────────────────────────────────
 declare -A icons=(
-    [Downloads]=$'\U000F01DA'   [Documents]=$'\U000F0219'   [Pictures]=$'\U0000F03E'
-    [Videos]=$'\U000F0567'      [Music]=$'\U000F075A'       [Desktop]=$'\U0000F108'
-    [Woelkchen]=$'\U0000F0C2'   [Uni]=$'\U0000F19C'
+    [Downloads]=$'\U000F01DA'   [Documents]=$'\U000F0219'   [Dokumente]=$'\U000F0219'
+    [Pictures]=$'\U0000F03E'    [Bilder]=$'\U0000F03E'      [Videos]=$'\U000F0567'
+    [Music]=$'\U000F075A'       [Desktop]=$'\U0000F108'     [Telegram]=$'\U0000E217'
+    [Screenshots]=$'\U0000F50C' [Backups]=$'\U000F006F'    [Backup]=$'\U000F006F'
+    [Kontakte]=$'\U0001F04CB'   [Hörbücher]=$'\U0000E638'  [Notizen]=$'\U000F039A'
+    [Folien]=$'\U0000E67D'      [setup]=$'\U0000EB51'       [storage]=$'\U0000F1C0'
+    [ISOs]=$'\U000F11F0'       [SteamLibrary]=$'\U0000ED29'
+    [Woelkchen]=$'\U0000F0C2'   [nextcloud]=$'\U0000F0C2'
+    [roaringbot]=$'\U0000EB1E'  [Tausendsassa]=$'\U0000F1FF' [dashboard]=$'\U0000EACD'
+    [website]=$'\U0001F059F'    [Uni]=$'\U0000F19C'
 )
 IFS='/' read -ra pp <<< "$dir_short"; pres=(); picon=()
 for p in "${pp[@]}"; do
@@ -106,15 +115,11 @@ if git -C "$dir" rev-parse --git-dir >/dev/null 2>&1; then
     ((untracked)) && sp+=("$untracked?"); ((deleted))   && sp+=("$deleted-")
     ((renamed))   && sp+=("$renamed»");   ((conflicted)) && sp+=("$conflicted!")
     ((ahead))     && sp+=("${ahead}↑");   ((behind))    && sp+=("${behind}↓")
-    if (( ${#sp[@]} )); then IFS=' '; git_status_text="❨${sp[*]}❩"; fi
+    if (( ${#sp[@]} )); then IFS=' '; git_status_text="${sp[*]}"; fi
 fi
 
 # ── RAM usage ───────────────────────────────────────────────────────────
-mt=''; ma=''
-while IFS=':' read -r k v; do
-    case "$k" in MemTotal) mt=$(awk '{print $1}' <<< "$v") ;; MemAvailable) ma=$(awk '{print $1}' <<< "$v") ;; esac
-done < /proc/meminfo
-ram=''; [ -n "$mt" ] && [ -n "$ma" ] && [ "$mt" -gt 0 ] && ram="$(( 100 - (ma * 100 / mt) ))%"
+# (removed — RAM replaced by clock in segment 6)
 
 # ── Assemble Line 1 ─────────────────────────────────────────────────────
 line1="${c1}${C1}"
@@ -123,13 +128,13 @@ if is_ssh || is_root; then
 else
     line1+=" ${black}${os_logo} "
 fi
-line1+="${C2}${c1} "
+line1+=" ${C2}${c1} "
 is_ssh && line1+="${black} in ${path_fg}${pjoin} " || line1+="${path_fg}${pjoin} "
-line1+="${C3}${c2}"
-if [ -n "$github_user" ]; then line1+=" ${black}"$'\U000F02A4'" ${gh_fg}${github_user} "; else line1+=" "; fi
+line1+=" ${C3}${c2}"
+if [ -n "$github_user" ]; then line1+=" ${black}"$'\U0000EB00'"  ${gh_fg}${github_user} "; else line1+=" "; fi
 line1+="${C4}${c3}"
 if [ -n "$branch" ]; then
-    line1+=" ${black}"$'\U000F062C'" ${branch_fg}${branch} "
+    line1+=" ${black}"$'\U000F062C'"  ${branch_fg}${branch} "
     [ -n "$tag" ] && line1+="${release_fg}(${tag}) "
 else line1+=" "; fi
 line1+="${C5}${c4}"
@@ -140,7 +145,7 @@ elif [ -n "$git_state" ]; then
     line1+="${state_fg} [${git_state}] "
 else line1+=" "; fi
 line1+="${C6}${c5}"
-line1+=" ${black}"$'\U000F035B'" ${ram_fg}${ram} "
+line1+=" ${black}"$'\U000F017'"  ${ram_fg}$(date +%H:%M) "
 line1+="${defbg}${c6}${reset}"
 
 # --- Model name ---
@@ -174,7 +179,8 @@ elif 'haiku' in m: pin, pout = 0.8, 4.0
 elif 'deepseek' in m: pin, pout = 0.28, 1.10
 else: pin, pout = 3.0, 15.0
 cost = (tin/1e6)*pin + (tout/1e6)*pout
-cost_s = f'\${cost:.3f}' if cost < 1 else f'\${cost:.2f}'
+if cost < 1: cost_s = f'{cost*100:.1f}¢'    # cents
+else:     cost_s = f'\${cost:.2f}'
 total = tin + tout
 if total >= 1e6: tok_s = f'{total/1e6:.1f}M'
 elif total >= 1e3: tok_s = f'{total/1e3:.0f}K'
@@ -205,8 +211,8 @@ fi
 bal=$(cat "$cache" 2>/dev/null || echo "?")
 
 # --- Assemble Line 2 ---
-strip() { printf '%s' "$1" | sed 's/\x1b\[[0-9;]*m//g'; }
-MAXW=80
+ESC=$'\033'
+strip() { printf '%s' "$1" | sed "s/${ESC}\[[0-9;]*m//g"; }
 
 line2=""
 if [ -n "$stats" ]; then
@@ -215,23 +221,33 @@ if [ -n "$stats" ]; then
 
     line2="$(printf '\033[33m%s\033[0m' "$tok_part")/$(printf '\033[32m%s\033[0m' "$cost_part")"
     if [ -n "$model" ]; then
-        line2="${line2} via $(printf '\033[35m%s\033[0m' "$model")"
+        model_short=$(printf '%s' "$model" | sed 's/[Dd][Ee][Ee][Pp][Ss][Ee][Ee][Kk]/ds/')
+        line2="${line2} via $(printf '\033[35m%s\033[0m' "$model_short")"
     fi
 
     # Show balance only for DeepSeek models
     if [ -n "$model" ] && echo "$model" | grep -qi "deepseek"; then
         if [ "$bal" != "?" ] && [ -n "$bal" ]; then
-            line2="${line2}, balance: $(printf '\033[36m%s\033[0m' "$bal")"
+            line2="${line2}, bal. $(printf '\033[36m%s\033[0m' "$bal")"
         fi
     fi
 fi
 
 # --- Output ---
-printf '%s\n' "$line1"
-
+min_gap=5
+safety=3
 if [ -n "$line2" ]; then
-    r2s=$(strip "$line2")
-    pad=$(( MAXW - ${#r2s} ))
-    [ $pad -lt 0 ] && pad=0
-    printf '%*s%s\n' "$pad" '' "$line2"
+    l1s=$(strip "$line1")
+    l2s=$(strip "$line2")
+    tw=${COLUMNS:-$(tput cols < /dev/tty 2>/dev/null || echo 80)}
+    available=$(( tw - ${#l1s} - ${#l2s} ))
+    if [ $available -lt $(( min_gap + safety )) ]; then
+        # Terminal too narrow for single row — use two lines
+        printf '%s\n%s\n' "$line1" "$line2"
+    else
+        pad=$(( available - safety ))
+        printf '%s%*s%s\n' "$line1" "$pad" '' "$line2"
+    fi
+else
+    printf '%s\n' "$line1"
 fi

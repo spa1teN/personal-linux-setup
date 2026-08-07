@@ -5,9 +5,9 @@
 # Seg 3  gold    #e3c991   GitHub logo + user
 # Seg 4  green   #a9d48e   Git branch + release tag
 # Seg 5  blue    #89bfdc   Git status
-# Seg 6  purple  #bdbaf1   Active environments
+# Seg 6  purple  #bdbaf1   Clock
 
-format = "$custom$fill$status$time$line_break$character"
+format = "$custom$fill$status$line_break$character"
 
 # ── Segment 1: Username · OS logo · Hostname ─────────────────────────────
 [custom.seg1_userhost]
@@ -62,9 +62,9 @@ ignore_timeout = true
 success_symbol = "[❯](bold green)"
 error_symbol = "[❯](bold red)"
 
-# ── Clock (right-aligned) ────────────────────────────────────────────────
+# ── Clock (right-aligned, now in segment 6) ──────────────────────────────
 [time]
-disabled = false
+disabled = true
 format = "[ $time ](fg:#888888)"
 time_format = "%H:%M"
 

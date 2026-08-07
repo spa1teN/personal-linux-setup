@@ -25,7 +25,7 @@ branch=$(git branch --show-current 2>/dev/null)
 tag=$(git describe --tags --abbrev=0 2>/dev/null || true)
 
 # ── Output ────────────────────────────────────────────────────────────────
-printf '%b' "${c4_bg} ${black}${branch_icon} ${branch_fg}${branch} "
+printf '%b' "${c4_bg} ${black}${branch_icon}  ${branch_fg}${branch} "
 if [ -n "$tag" ]; then
     printf '%b' "${release_fg}(${tag}) "
 fi
