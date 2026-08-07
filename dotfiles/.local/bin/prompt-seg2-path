@@ -1,15 +1,15 @@
 #!/bin/bash
-# Segment 2 — Directory path  (bg: #ef9f7a peach)
+# Segment 2 — Directory path  (bg: #d47040 peach)
 #
 # Prefixes "in" when connected via SSH.
 # Substitutes well-known directory names with Nerd Font icons.
 # Always outputs: content + (→gold)
 
 # ── Colors ───────────────────────────────────────────────────────────────
-c2_bg='\033[48;2;239;159;122m'   # segment 2 bg  #ef9f7a
-c3_bg='\033[48;2;227;201;145m'   # segment 3 bg  #e3c991
-c2_fg='\033[38;2;239;159;122m'   # segment 2 fg (for chevron)
-path_fg='\033[38;2;90;50;25m\033[1m'     # bold dark brown
+c2_bg='\033[48;2;212;112;64m'    # segment 2 bg  #d47040
+c3_bg='\033[48;2;245;194;74m'    # segment 3 bg  #f5c24a
+c2_fg='\033[38;2;212;112;64m'    # segment 2 fg (for chevron)
+path_fg='\033[38;2;24;24;24m\033[1m'     # bold near-black
 black='\033[38;2;24;24;24m\033[1m'       # near-black for "in" prefix
 
 # ── SSH detection ────────────────────────────────────────────────────────

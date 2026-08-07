@@ -1,16 +1,16 @@
 #!/bin/bash
-# Segment 6 — Clock  (bg: #bdbaf1 lavender)
+# Segment 6 — Clock  (bg: #8872c8 lavender)
 #
 # Always outputs: clock +  end-cap + reset
 
 # ── Colors ───────────────────────────────────────────────────────────────
-c6_bg='\033[48;2;189;186;241m'   # segment 6 bg  #bdbaf1
-c6_fg='\033[38;2;189;186;241m'   # segment 6 fg (for end-cap)
-fg='\033[38;2;35;25;80m\033[1m'          # bold dark indigo
+c6_bg='\033[48;2;136;114;200m'   # segment 6 bg  #8872c8
+c6_fg='\033[38;2;136;114;200m'   # segment 6 fg (for end-cap)
+fg='\033[38;2;24;24;24m\033[1m'          # bold near-black
 black='\033[38;2;24;24;24m\033[1m'
 reset='\033[0m'
 
 # ── Output ────────────────────────────────────────────────────────────────
 printf '%b' "${c6_bg}"
-printf '%b' " ${black}"$'\U000F017'"  ${fg}$(date +%H:%M) "   #  clock icon + time
+printf '%b' " ${black}"$'\U000F017'" ${fg}$(date +%H:%M) "   #  clock icon + time
 printf '%b' "\033[49m${c6_fg}${reset}"

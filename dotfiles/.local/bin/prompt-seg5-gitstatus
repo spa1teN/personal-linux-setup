@@ -1,13 +1,13 @@
 #!/bin/bash
-# Segment 5 — Git status  (bg: #89bfdc sky blue)
+# Segment 5 — Git status  (bg: #55aadd sky blue)
 #
 # Replaces text labels with symbols: + ~ ? - » ! ↑ ↓
 # Always outputs: content + (→lavender)
 
 # ── Colors ───────────────────────────────────────────────────────────────
-c5_bg='\033[48;2;137;191;220m'   # segment 5 bg  #89bfdc
-c6_bg='\033[48;2;189;186;241m'   # segment 6 bg  #bdbaf1
-c5_fg='\033[38;2;137;191;220m'   # segment 5 fg (for chevron)
+c5_bg='\033[48;2;85;170;221m'    # segment 5 bg  #55aadd
+c6_bg='\033[48;2;136;114;200m'   # segment 6 bg  #8872c8
+c5_fg='\033[38;2;85;170;221m'    # segment 5 fg (for chevron)
 status_fg='\033[38;2;20;55;85m\033[1m'    # bold dark navy
 
 # ── Status symbols ───────────────────────────────────────────────────────

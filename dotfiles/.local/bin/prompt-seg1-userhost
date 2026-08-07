@@ -1,16 +1,18 @@
 #!/bin/bash
-# Segment 1 — Username · OS logo · Hostname  (bg: #e88489 pink)
+# Segment 1 — Username · OS logo · Hostname  (bg: #aa0000 red)
 #
 # Local:  only OS logo
 # SSH:    username · OS logo · hostname
 # Always outputs:  + content + (→peach)
 
 # ── Colors ───────────────────────────────────────────────────────────────
-c1_bg='\033[48;2;232;132;137m'   # segment 1 bg  #e88489
-c2_bg='\033[48;2;239;159;122m'   # segment 2 bg  #ef9f7a
-c1_fg='\033[38;2;232;132;137m'   # segment 1 fg (for chevrons)
-user_fg='\033[38;2;110;25;28m\033[1m'    # bold dark red
-host_fg='\033[38;2;80;25;65m\033[1m'     # bold dark plum
+c1_bg='\033[48;2;170;0;0m'      # segment 1 bg  #aa0000
+c2_bg='\033[48;2;212;112;64m'    # segment 2 bg  #d47040
+c1_fg='\033[38;2;170;0;0m'      # segment 1 fg (for chevrons)
+user_fg='\033[38;2;255;255;255m\033[1m'    # bold white
+host_fg='\033[38;2;180;240;255m\033[1m'    # bold light cyan
+black='\033[38;2;24;24;24m\033[1m'         # near-black for symbols
+white='\033[38;2;255;255;255m\033[1m'      # white for OS logo
 black='\033[38;2;24;24;24m\033[1m'       # near-black for symbols
 
 # ── Data ──────────────────────────────────────────────────────────────────
@@ -22,7 +24,7 @@ if [ -f /proc/device-tree/model ] && grep -qi 'raspberry pi' /proc/device-tree/m
 elif [ -f /etc/os-release ]; then
     . /etc/os-release 2>/dev/null
     case "${ID,,}" in
-        linuxmint) logo=$'\U000F08ED' ;;
+        linuxmint) logo=$'' ;;  #  linux_cinnamon
         ubuntu)    logo=$'\U0000F31B' ;;
         *)         logo=$'\U0000F31A' ;;  # generic tux
     esac
@@ -36,8 +38,8 @@ sshing=''
 # ── Output ────────────────────────────────────────────────────────────────
 printf '%b' "${c1_fg}${c1_bg}"
 if [ -n "$sshing" ]; then
-    printf '%b' "${user_fg}${user} ${black}${logo} ${host_fg}${host}"
+    printf '%b' "${user_fg}${user} ${white}${logo}  ${host_fg}${host}"
 else
-    printf '%b' "${black}${logo} "
+    printf '%b' "${white}${logo} "
 fi
 printf '%b' " ${c2_bg}${c1_fg}"

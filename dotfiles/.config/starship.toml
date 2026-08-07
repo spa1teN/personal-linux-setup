@@ -1,11 +1,11 @@
 # Starship Prompt — Rainbow Powerline (6 segments)
 #
-# Seg 1  pink    #e88489   Username · OS logo · Hostname
-# Seg 2  peach   #ef9f7a   Directory path  (prefix "in" on SSH)
-# Seg 3  gold    #e3c991   GitHub logo + user
-# Seg 4  green   #a9d48e   Git branch + release tag
-# Seg 5  blue    #89bfdc   Git status
-# Seg 6  purple  #bdbaf1   Clock
+# Seg 1  red     #aa0000   Username · OS logo · Hostname
+# Seg 2  peach   #d47040   Directory path  (prefix "in" on SSH)
+# Seg 3  gold    #f5c24a   GitHub logo + user
+# Seg 4  green   #66cc55   Git branch + release tag
+# Seg 5  blue    #55aadd   Git status
+# Seg 6  purple  #8872c8   Clock
 
 format = "$custom$fill$status$line_break$character"
 

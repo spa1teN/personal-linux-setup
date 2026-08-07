@@ -16,18 +16,18 @@ dir_short=$(printf '%s' "$dir" | sed "s|^$home_esc|~|")
 # Six segments matching ~/.config/starship.toml
 
 # Background colors — $'...' produces actual ESC bytes, not literal \033
-C1=$'\033[48;2;212;112;117m';   C2=$'\033[48;2;219;139;102m';   C3=$'\033[48;2;207;181;125m'
-C4=$'\033[48;2;149;192;122m';   C5=$'\033[48;2;117;171;200m';   C6=$'\033[48;2;169;166;221m'
+C1=$'\033[48;2;170;0;0m';       C2=$'\033[48;2;212;112;64m';   C3=$'\033[48;2;245;194;74m'
+C4=$'\033[48;2;102;204;85m';    C5=$'\033[48;2;85;170;221m';    C6=$'\033[48;2;136;114;200m'
 BG=$'\033[48;2;42;45;52m'
-c1=$'\033[38;2;212;112;117m';   c2=$'\033[38;2;219;139;102m';   c3=$'\033[38;2;207;181;125m'
-c4=$'\033[38;2;149;192;122m';   c5=$'\033[38;2;117;171;200m';   c6=$'\033[38;2;169;166;221m'
+c1=$'\033[38;2;170;0;0m';       c2=$'\033[38;2;212;112;64m';    c3=$'\033[38;2;245;194;74m'
+c4=$'\033[38;2;102;204;85m';    c5=$'\033[38;2;85;170;221m';    c6=$'\033[38;2;136;114;200m'
 black=$'\033[38;2;24;24;24m\033[1m';      white=$'\033[38;2;255;255;255m\033[1m'
 white_bg=$'\033[48;2;255;255;255m'
-user_fg=$'\033[38;2;110;25;28m\033[1m'
-host_fg=$'\033[38;2;80;25;65m\033[1m';    path_fg=$'\033[38;2;90;50;25m\033[1m'
+user_fg=$'\033[38;2;255;255;255m\033[1m'
+host_fg=$'\033[38;2;180;240;255m\033[1m'; path_fg=$'\033[38;2;24;24;24m\033[1m'
 gh_fg=$'\033[38;2;80;60;15m\033[1m';      branch_fg=$'\033[38;2;30;75;25m\033[1m'
 release_fg=$'\033[38;2;55;90;40m\033[1m'; status_fg=$'\033[38;2;20;55;85m\033[1m'
-ram_fg=$'\033[38;2;35;25;80m\033[1m';     state_fg=$'\033[38;2;30;70;80m\033[1m'
+ram_fg=$'\033[38;2;24;24;24m\033[1m';     state_fg=$'\033[38;2;30;70;80m\033[1m'
 reset=$'\033[0m'
 defbg=$'\033[49m'   # default background
 
@@ -40,7 +40,7 @@ if [ -f /proc/device-tree/model ] && grep -qi 'raspberry pi' /proc/device-tree/m
 elif [ -f /etc/os-release ]; then
     . /etc/os-release 2>/dev/null
     case "${ID,,}" in
-        linuxmint) os_logo=$'\U0000F30E' ;;  ubuntu) os_logo=$'\U0000F31B' ;;
+        linuxmint) os_logo=$'' ;;  ubuntu) os_logo=$'\U0000F31B' ;;
         *)         os_logo=$'\U0000F31A' ;;
     esac
 else os_logo=$'\U0000F31A'; fi
@@ -124,17 +124,17 @@ fi
 # ── Assemble Line 1 ─────────────────────────────────────────────────────
 line1="${c1}${C1}"
 if is_ssh || is_root; then
-    line1+="${user_fg}$(whoami) ${black}${os_logo} ${host_fg}$(hostname -s) "
+    line1+="${user_fg}$(whoami) ${white}${os_logo}  ${host_fg}$(hostname -s) "
 else
-    line1+=" ${black}${os_logo} "
+    line1+=" ${white}${os_logo} "
 fi
 line1+=" ${C2}${c1} "
 is_ssh && line1+="${black} in ${path_fg}${pjoin} " || line1+="${path_fg}${pjoin} "
 line1+=" ${C3}${c2}"
-if [ -n "$github_user" ]; then line1+=" ${black}"$'\U0000EB00'"  ${gh_fg}${github_user} "; else line1+=" "; fi
+if [ -n "$github_user" ]; then line1+=" ${black}"$'\U0000EB00'" ${gh_fg}${github_user} "; else line1+=" "; fi
 line1+="${C4}${c3}"
 if [ -n "$branch" ]; then
-    line1+=" ${black}"$'\U000F062C'"  ${branch_fg}${branch} "
+    line1+=" ${black}"$'\U000F062C'" ${branch_fg}${branch} "
     [ -n "$tag" ] && line1+="${release_fg}(${tag}) "
 else line1+=" "; fi
 line1+="${C5}${c4}"
@@ -145,7 +145,7 @@ elif [ -n "$git_state" ]; then
     line1+="${state_fg} [${git_state}] "
 else line1+=" "; fi
 line1+="${C6}${c5}"
-line1+=" ${black}"$'\U000F017'"  ${ram_fg}$(date +%H:%M) "
+line1+=" ${black}"$'\U000F017'" ${ram_fg}$(date +%H:%M) "
 line1+="${defbg}${c6}${reset}"
 
 # --- Model name ---
@@ -185,7 +185,7 @@ total = tin + tout
 if total >= 1e6: tok_s = f'{total/1e6:.1f}M'
 elif total >= 1e3: tok_s = f'{total/1e3:.0f}K'
 else: tok_s = str(total)
-print(f'{tok_s} token')
+print(f'{tok_s} tok.')
 print(f'~{cost_s}')
 " 2>/dev/null)
 [ -z "$stats" ] && stats=""
@@ -222,7 +222,7 @@ if [ -n "$stats" ]; then
     line2="$(printf '\033[33m%s\033[0m' "$tok_part")/$(printf '\033[32m%s\033[0m' "$cost_part")"
     if [ -n "$model" ]; then
         model_short=$(printf '%s' "$model" | sed 's/[Dd][Ee][Ee][Pp][Ss][Ee][Ee][Kk]/ds/')
-        line2="${line2} via $(printf '\033[35m%s\033[0m' "$model_short")"
+        line2="${line2} ($(printf '\033[35m%s\033[0m' "$model_short"))"
     fi
 
     # Show balance only for DeepSeek models

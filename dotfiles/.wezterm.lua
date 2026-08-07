@@ -17,8 +17,8 @@ if os.getenv('WAYLAND_DISPLAY') then
   config.wayland_window_background_blur = true
 else
   -- X11: fake blur with a pre-blurred background of your wallpaper
-  config.window_background_opacity = 1.0
-  config.window_background_image = os.getenv('HOME') .. '/.wezterm/bg1.jpg'
+  config.window_background_opacity = 0.95
+  config.window_background_image = os.getenv('HOME') .. '/.wezterm/bg3.jpg'
 end
 
 -- Auto-detect colors from the current GTK theme
@@ -456,8 +456,5 @@ wezterm.on('format-tab-title', function(tab, tabs, panes, cnf, hover, max_width)
   local cw = utf8_len(title)
   return { { Text = '  ' .. title .. '  ' .. string.rep(' ', math.max(0, max_width - cw - 4)) } }
 end)
-
--- Rendering
-config.front_end = "Software"
 
 return config

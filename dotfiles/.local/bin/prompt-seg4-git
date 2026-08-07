@@ -1,12 +1,12 @@
 #!/bin/bash
-# Segment 4 — Git branch + release tag  (bg: #a9d48e green)
+# Segment 4 — Git branch + release tag  (bg: #66cc55 green)
 #
 # Always outputs: content + (→blue)
 
 # ── Colors ───────────────────────────────────────────────────────────────
-c4_bg='\033[48;2;169;212;142m'   # segment 4 bg  #a9d48e
-c5_bg='\033[48;2;137;191;220m'   # segment 5 bg  #89bfdc
-c4_fg='\033[38;2;169;212;142m'   # segment 4 fg (for chevron)
+c4_bg='\033[48;2;102;204;85m'    # segment 4 bg  #66cc55
+c5_bg='\033[48;2;85;170;221m'    # segment 5 bg  #55aadd
+c4_fg='\033[38;2;102;204;85m'    # segment 4 fg (for chevron)
 branch_fg='\033[38;2;30;75;25m\033[1m'   # bold dark green
 release_fg='\033[38;2;55;90;40m\033[1m'  # bold medium-dark green
 black='\033[38;2;24;24;24m\033[1m'       # near-black for symbol
@@ -25,7 +25,7 @@ branch=$(git branch --show-current 2>/dev/null)
 tag=$(git describe --tags --abbrev=0 2>/dev/null || true)
 
 # ── Output ────────────────────────────────────────────────────────────────
-printf '%b' "${c4_bg} ${black}${branch_icon}  ${branch_fg}${branch} "
+printf '%b' "${c4_bg} ${black}${branch_icon} ${branch_fg}${branch} "
 if [ -n "$tag" ]; then
     printf '%b' "${release_fg}(${tag}) "
 fi
