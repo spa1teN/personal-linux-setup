@@ -18,7 +18,7 @@ if os.getenv('WAYLAND_DISPLAY') then
 else
   -- X11: fake blur with a pre-blurred background of your wallpaper
   config.window_background_opacity = 0.95
-  config.window_background_image = os.getenv('HOME') .. '/.wezterm/bg3.jpg'
+  config.window_background_image = os.getenv('HOME') .. '/.wezterm/bg1.jpg'
 end
 
 -- Auto-detect colors from the current GTK theme
@@ -74,8 +74,19 @@ config.colors = {
 }
 
 -- Window title
+-- Strip tmux: prefix markers from a title (used by format-window-title
+-- and format-tab-title). Handles up to 2 levels of nesting.
+local function strip_context_prefix(title)
+  for _ = 1, 2 do
+    local stripped = title:match('^tmux:(.+)') or title:match('^ssh:(.+)')
+    if stripped then title = stripped else break end
+  end
+  return title
+end
+
 wezterm.on('format-window-title', function(tab, pane, tabs, panes, config)
-  local title = tab.active_pane.title or 'wezterm'
+  local raw_title = tab.active_pane.title or 'wezterm'
+  local title = strip_context_prefix(raw_title)
   local idx = tab.tab_index + 1
   return title .. '  [' .. idx .. '/' .. #tabs .. ']'
 end)
@@ -124,6 +135,15 @@ end)
 -- Custom tab titles (survive shell OSC title overrides)
 local custom_tab_titles = {}
 
+-- Per-pane SSH state: when we see a path with "in " prefix, we know this
+-- pane is an SSH session. Subsequent command titles (which lack the prefix)
+-- can still show the SSH icon by consulting this table.
+local pane_ssh_state = {}
+
+-- Per-pane device identity: when we know which Tailscale device a pane is
+-- connected to, store its icon for display after the SSH icon.
+local pane_device = {}
+
 -- Path icon substitutions — mirrors prompt-seg2-path for tab titles
 local path_icons = {
   Downloads    = '\u{F01DA}',
@@ -164,7 +184,6 @@ local prog_icons = {
   vi    = '\u{E7C5}',
   nano  = '\u{E795}',   -- nf-cod-pencil
   emacs = '\u{E632}',   -- nf-seti-emacs
-  code  = '\u{E70C}',   -- nf-dev-visual_studio
   -- System monitors
   htop  = '\u{F32E}',   -- nf-mdi-chart_areaspline
   btop  = '\u{F32E}',
@@ -186,15 +205,15 @@ local prog_icons = {
   make    = '\u{E779}', -- nf-cod-terminal_bash
   gcc     = '\u{E77A}', -- nf-cod-terminal_powershell
   ['g++'] = '\u{E77A}',
-  ssh     = '\u{F08B9}', -- nf-fa-terminal (user-specified)
+  ssh     = '\u{F08C0}', -- nf-fa-terminal (user-specified)
   -- SSH aliases from .bash_aliases
-  stratoserver = '\u{F08B9}',
-  himbeere     = '\u{F08B9}',
-  mainpc       = '\u{F08B9}',
-  laptop       = '\u{F08B9}',
-  smartmatch   = '\u{F08B9}',
-  hpicluster   = '\u{F08B9}',
-  hpiclusterrun = '\u{F08B9}',
+  stratoserver = '\u{F08C0}',
+  himbeere     = '\u{F08C0}',
+  mainpc       = '\u{F08C0}',
+  laptop       = '\u{F08C0}',
+  smartmatch   = '\u{F08C0}',
+  hpicluster   = '\u{F08C0}',
+  hpiclusterrun = '\u{F08C0}',
   sudo    = '\u{F489}',
   su      = '\u{F489}',
   -- File viewers / pagers
@@ -209,6 +228,78 @@ local prog_icons = {
   fish    = nil,
   sh      = nil,
   dash    = nil,
+  -- Terminal multiplexer / AI tools
+  tmux   = '\u{EBC8}',
+  claude = '\u{EC82}',
+  -- Network tools
+  wget   = '\u{F19D0}',
+  curl   = '\u{F19D0}',
+  sftp   = '\u{EAE9}',
+  scp    = '\u{EAE9}',
+}
+
+-- Device icons for Tailscale hosts (shown after SSH icon in tab titles)
+local device_icons = {
+  spa1lnx                 = '\u{F01C5}',
+  ['pixel-7a-von-spa1ten'] = '\u{F10B}',
+  himbeere                = '\u{F043F}',
+  sadeniemi               = '\u{F0322}',
+  stratoserver            = '\u{EB50}',
+  mainpc                  = '\u{F01C5}',  -- alias for spa1lnx
+  laptop                  = '\u{F0322}',   -- alias for sadeniemi
+}
+
+-- File extension --> Nerd Font icon. All codepoints are from families proven
+-- to render in this config (devicons E7xx, seti E6xx, fa Fxxx).
+-- Verify at nerdfonts.com/cheat-sheet if any glyphs are missing.
+local ext_icons = {
+  json    = '\u{F0626}',
+  py      = '\u{E73C}',
+  js      = '\u{E718}',
+  mjs     = '\u{E718}',
+  ts      = '\u{E628}',
+  tsx     = '\u{E628}',
+  jsx     = '\u{E7BA}',
+  html    = '\u{E60E}',
+  htm     = '\u{E60E}',
+  css     = '\u{E6B8}',
+  scss    = '\u{E6B8}',
+  md      = '\u{EB1D}',
+  mdx     = '\u{EB1D}',
+  rs      = '\u{E7A8}',
+  go      = '\u{E724}',
+  rb      = '\u{E791}',
+  java    = '\u{E738}',
+  lua     = '\u{E620}',
+  cpp     = '\u{E646}',
+  cc      = '\u{E646}',
+  cxx     = '\u{E646}',
+  hpp     = '\u{E646}',
+  hxx     = '\u{E646}',
+  c       = '\u{E61E}',
+  h       = '\u{E61E}',
+  toml    = '\u{E615}',
+  yaml    = '\u{E615}',
+  yml     = '\u{E615}',
+  ini     = '\u{E615}',
+  cfg     = '\u{E615}',
+  conf    = '\u{E615}',
+  sh      = '\u{E795}',
+  bash    = '\u{E795}',
+  zsh     = '\u{E795}',
+  vim     = '\u{E7C5}',
+  tex     = '\u{E69B}',
+  ltx     = '\u{E69B}',
+  latex   = '\u{E69B}',
+  csv     = '\u{EEFC}',
+  tar     = '\u{EAEF}',
+  zip     = '\u{EAEF}',
+  gz      = '\u{EAEF}',
+  xz      = '\u{EAEF}',
+  bz2     = '\u{EAEF}',
+  ['7z']  = '\u{EAEF}',
+  rar     = '\u{EAEF}',
+  txt     = nil,
 }
 
 -- Format a path like the bash prompt: ~ for HOME, icon substitutions, spaced slashes
@@ -256,12 +347,78 @@ local function utf8_len(s)
   return count
 end
 
+-- Truncate a UTF-8 string to at most maxchars code points, appending ...
+local function truncate_utf8(s, maxchars)
+  if maxchars < 1 then return '...' end
+  local count = 0
+  for pos, cp in s:gmatch('()([%z\1-\127\194-\244][\128-\191]*)') do
+    count = count + 1
+    if count > maxchars then return s:sub(1, pos - 1) .. '...' end
+  end
+  return s
+end
+
+-- Split a string into whitespace-delimited tokens
+local function split_tokens(s)
+  local out = {}
+  for t in s:gmatch('%S+') do out[#out+1] = t end
+  return out
+end
+
+-- Derive a stable key for a pane (falls back to tab_id)
+local function pane_key(pane, tab)
+  local id = safe_field(pane, 'pane_id')
+  if id then return id end
+  return tab.tab_id
+end
+
+-- Programs where the filename matters more than the program name
+local show_file_only = {
+  nvim = true, vim = true, vi = true, emacs = true,
+  nano = true, code = true, less = true, man = true,
+}
+
+-- Collect program icons (first 3 meaningful tokens) and file-extension icons
+-- (all tokens). Returns {icons}, last_prog_index, show_file_bool.
+local MAX_PROG_TOKENS = 3
+local function collect_icons(tokens)
+  local icons, seen, last_prog = {}, {}, nil
+  -- Program scan: first MAX_PROG_TOKENS tokens only, skip flags/URLs/paths
+  local limit = math.min(MAX_PROG_TOKENS, #tokens)
+  for i = 1, limit do
+    local t = tokens[i]:lower()
+    if t:sub(1,1) ~= '-' and not t:find('[/=:%%%*%?%[]]') then
+      local ic = prog_icons[t]
+      if ic and not seen[ic] then
+        seen[ic] = true
+        icons[#icons+1] = ic
+        last_prog = i
+      end
+    end
+  end
+  local show_file = last_prog and show_file_only[tokens[last_prog]:lower()]
+  -- Extension scan: all tokens, skip flags and URLs
+  for _, t in ipairs(tokens) do
+    if t:sub(1,1) ~= '-' and t:sub(1,1) ~= '*' and not t:find('://') then
+      local ext = t:match('%.([%a%d]+)$')
+      if ext then
+        local ic = ext_icons[ext]
+        if ic and not seen[ic] then
+          seen[ic] = true
+          icons[#icons+1] = ic
+        end
+      end
+    end
+  end
+  return icons, last_prog, show_file
+end
+
 -- SSH domains (from ~/.bash_aliases) — appear in launcher, type name to connect
 config.ssh_domains = {
-  { name = 'himbeere',      remote_address = 'caspar@himbeere',                multiplexing = 'WezTerm' },
-  { name = 'mainpc',        remote_address = 'caspar@spa1lnx',                 multiplexing = 'WezTerm' },
-  { name = 'laptop',        remote_address = 'caspar@sadeniemi',               multiplexing = 'WezTerm' },
-  { name = 'stratoserver',  remote_address = 'root@casparsadenius.de',         multiplexing = 'WezTerm' },
+  { name = 'himbeere',      remote_address = 'himbeere',                        multiplexing = 'WezTerm' },
+  { name = 'mainpc',        remote_address = 'spa1lnx',                         multiplexing = 'WezTerm' },
+  { name = 'laptop',        remote_address = 'sadeniemi',                       multiplexing = 'WezTerm' },
+  { name = 'stratoserver',  remote_address = 'casparsadenius.de', username = 'root', multiplexing = 'WezTerm' },
 }
 
 -- Launcher menu: press Ctrl+Shift+P, type "shortcuts"
@@ -387,24 +544,180 @@ wezterm.on('format-tab-title', function(tab, tabs, panes, cnf, hover, max_width)
 
   local pane_title = pane.title or ''
 
-  -- Does the title look like a path? (may include "in " prefix from SSH)
-  local ssh_prefix = pane_title:match('^in ')
-  local path_candidate = ssh_prefix and pane_title:sub(4) or pane_title
-  if path_candidate:match('^~/') or path_candidate:match('^/') then
+  -- Does the title look like a path? (may include "in " prefix from SSH;
+  -- may include "tmux:" prefix from tmux set-titles-string)
+  -- 1. Strip tmux: prefix so "tmux:in ~/foo" parses correctly
+  local tmux_in_path = false
+  local path_title = pane_title
+  for _ = 1, 2 do
+    local stripped = path_title:match('^tmux:(.+)')
+    if stripped then
+      tmux_in_path = true
+      path_title = stripped
+    else
+      break
+    end
+  end
+
+  -- 2. Detect SSH "in " prefix on the cleaned title
+  local ssh_prefix = path_title:match('^in ')
+  local path_candidate = ssh_prefix and path_title:sub(4) or path_title
+  if path_candidate:match('^~') or path_candidate:match('^/') then
     local domain = safe_field(pane, 'domain_name') or 'local'
     local is_ssh = (ssh_prefix ~= nil) or (domain ~= 'local')
-    local cwd = safe_field(pane, 'current_working_dir')
-    local title
+
+    -- Write per-pane SSH state (only set true on "in " prefix — never
+    -- clear it from a bare path, since the remote PRECMD fires first and
+    -- sends a path *without* "in " before prompt-seg2-path can correct it)
+    local pk = pane_key(pane, tab)
+    if is_ssh then
+      pane_ssh_state[pk] = true
+      -- Try to identify the device from the domain name
+      local dom = safe_field(pane, 'domain_name')
+      if dom then
+        local dev = device_icons[dom] or (dom:match('^[^.]+') and device_icons[dom:match('^[^.]+')])
+        if dev then pane_device[pk] = dev end
+      end
+    end
+
+    -- Build context icon prefix (SSH → device → tmux order)
+    local context_icons = {}
+    if is_ssh and prog_icons.ssh then
+      context_icons[#context_icons+1] = prog_icons.ssh
+    end
+    local dev_icon = pane_device[pk]
+    if dev_icon then
+      context_icons[#context_icons+1] = dev_icon
+    end
+    if tmux_in_path and prog_icons.tmux then
+      context_icons[#context_icons+1] = prog_icons.tmux
+    end
+
+    -- Inside tmux, cwd from pane is stale (tmux doesn't forward OSC 7);
+    -- always use the path from the title. Outside tmux, prefer OSC 7 cwd.
+    local cwd = tmux_in_path and nil or safe_field(pane, 'current_working_dir')
+    local path_str
     if cwd and type(cwd) == 'table' and cwd.path and cwd.scheme == 'file' then
-      title = format_path_for_tab(cwd.path, is_ssh)
+      path_str = format_path_for_tab(cwd.path, false)
     else
-      title = format_path_for_tab(path_candidate, is_ssh)
+      path_str = format_path_for_tab(path_candidate, false)
+    end
+
+    local title
+    if #context_icons > 0 then
+      title = table.concat(context_icons, ' ') .. ' ' .. path_str
+    else
+      title = path_str
     end
     local cw = utf8_len(title)
     return { { Text = '  ' .. title .. '  ' .. string.rep(' ', math.max(0, max_width - cw - 4)) } }
   end
 
-  -- Not a path → get foreground process (may help identify aliased commands)
+  -- Not a path → collect all program + file-type icons
+  -- 1. Strip tmux: prefix (set by .tmux.conf set-titles-string)
+  local tmux_active = false
+  local rest_title = pane_title
+  for _ = 1, 2 do
+    local stripped = rest_title:match('^tmux:(.+)')
+    if stripped then
+      tmux_active = true
+      rest_title = stripped
+    else
+      break
+    end
+  end
+
+  -- 2. Tokenize the command
+  local tokens = split_tokens(rest_title)
+
+  -- 3. Proactive SSH state: running ssh/sftp/scp marks the pane as SSH;
+  -- exit/logout clears it. Also track which device we connected to.
+  local pk_cmd = pane_key(pane, tab)
+  if #tokens > 0 then
+    local first = tokens[1]:lower()
+    if first == 'ssh' or first == 'sftp' or first == 'scp' then
+      pane_ssh_state[pk_cmd] = true
+      -- Look up device icon from hostname argument
+      if #tokens > 1 then
+        local dev = device_icons[tokens[2]] or device_icons[tokens[2]:lower()]
+        if dev then pane_device[pk_cmd] = dev end
+      end
+    elseif first == 'exit' or first == 'logout' then
+      pane_ssh_state[pk_cmd] = false
+      pane_device[pk_cmd] = nil
+    end
+    -- Also detect SSH aliases (stratoserver, himbeere, etc.) that are
+    -- in prog_icons with the SSH icon → treat as ssh to that device
+    if prog_icons[first] == prog_icons.ssh then
+      local dev = device_icons[first] or device_icons[tokens[1]]
+      if dev then pane_device[pk_cmd] = dev end
+    end
+  end
+
+  local is_ssh_cmd = pane_ssh_state[pk_cmd] == true
+
+  -- 4. Collect matching icons
+  local icons, last_prog, show_file = collect_icons(tokens)
+
+  if #icons > 0 then
+    -- Build ordered icon list: context (SSH → tmux) → programs → file type
+    local all_icons, seen = {}, {}
+    local ssh_icon = prog_icons.ssh
+    local tmux_icon = prog_icons.tmux
+
+    if is_ssh_cmd and ssh_icon and not seen[ssh_icon] then
+      seen[ssh_icon] = true
+      all_icons[#all_icons+1] = ssh_icon
+    end
+    -- Device icon (specific Tailscale host we're connected to)
+    local dev_icon = pane_device[pk_cmd]
+    if dev_icon and not seen[dev_icon] then
+      seen[dev_icon] = true
+      all_icons[#all_icons+1] = dev_icon
+    end
+    if tmux_active and tmux_icon and not seen[tmux_icon] then
+      seen[tmux_icon] = true
+      all_icons[#all_icons+1] = tmux_icon
+    end
+    for _, ic in ipairs(icons) do
+      if not seen[ic] then
+        seen[ic] = true
+        all_icons[#all_icons+1] = ic
+      end
+    end
+
+    -- Build text portion
+    local text
+    if show_file and last_prog then
+      -- Editor/pager with filename: show basename of last token
+      local last_token = tokens[#tokens]
+      text = last_token:match('[^/]+$') or last_token
+    elseif last_prog and last_prog < #tokens then
+      -- Show remaining args after last matched program
+      local rest_parts = {}
+      for i = last_prog + 1, #tokens do
+        rest_parts[#rest_parts+1] = tokens[i]
+      end
+      text = table.concat(rest_parts, ' ')
+    elseif last_prog then
+      -- Single program, no args: show program name
+      text = tokens[last_prog]:lower()
+    else
+      text = rest_title
+    end
+
+    local icon_str = table.concat(all_icons, ' ')
+    local avail = math.max(0, max_width - utf8_len(icon_str) - 4)
+    if utf8_len(text) > avail then
+      text = truncate_utf8(text, math.max(1, avail - 1))
+    end
+    local full_title = icon_str .. ' ' .. text
+    local cw = utf8_len(full_title)
+    return { { Text = '  ' .. full_title .. '  ' .. string.rep(' ', math.max(0, max_width - cw - 4)) } }
+  end
+
+  -- No icons matched → legacy fallback (kept for forward-compat with newer
+  -- WezTerm versions that expose get_foreground_process_name)
   local get_proc_fn = safe_field(pane, 'get_foreground_process_name')
   local fg_name = nil
   if get_proc_fn and type(get_proc_fn) == 'function' then
@@ -414,47 +727,46 @@ wezterm.on('format-tab-title', function(tab, tabs, panes, cnf, hover, max_width)
     end
   end
 
-  -- Not a path → check if we can show a program icon
-  local first_word, rest = pane_title:match('^(%w+)%s+(.*)')
+  -- Legacy single-icon fallback
+  local first_word, rest = rest_title:match('^(%w+)%s+(.*)')
   if not first_word then
-    first_word = pane_title:match('^(%w+)')
+    first_word = rest_title:match('^(%w+)')
   end
   if first_word then
     local pname = first_word:lower()
-    -- Icon from pane title first, or from foreground process (catches aliases)
     local icon = prog_icons[pname] or (fg_name and prog_icons[fg_name])
     local display_name = icon and (prog_icons[pname] and pname or fg_name) or nil
     if icon then
-      -- Programs where filename matters more than program name (editors, pagers)
-      local show_file_only = { nvim = true, vim = true, vi = true, emacs = true, nano = true, code = true, less = true }
-      local title
       if show_file_only[display_name] and rest and rest ~= '' then
-        -- Extract basename from the last argument (not the full command-line path)
         local last_arg = rest:match('%S+$') or rest
         local display = last_arg:match('[^/]+$') or last_arg
-        title = icon .. ' ' .. display
+        local title = icon .. ' ' .. display
+        local cw = utf8_len(title)
+        return { { Text = '  ' .. title .. '  ' .. string.rep(' ', math.max(0, max_width - cw - 4)) } }
       else
-        title = icon .. ' ' .. display_name
+        local title = icon .. ' ' .. display_name
         if rest and rest ~= '' then
           title = title .. ' ' .. rest
         end
+        local cw = utf8_len(title)
+        return { { Text = '  ' .. title .. '  ' .. string.rep(' ', math.max(0, max_width - cw - 4)) } }
       end
-      local cw = utf8_len(title)
-      return { { Text = '  ' .. title .. '  ' .. string.rep(' ', math.max(0, max_width - cw - 4)) } }
     end
   end
 
-  -- No icon match, but foreground process has an icon → show it with pane title
+  -- Foreground process fallback (works on newer WezTerm versions)
   if fg_name and prog_icons[fg_name] then
-    local title = prog_icons[fg_name] .. ' ' .. pane_title
+    local title = prog_icons[fg_name] .. ' ' .. rest_title
     local cw = utf8_len(title)
     return { { Text = '  ' .. title .. '  ' .. string.rep(' ', math.max(0, max_width - cw - 4)) } }
   end
 
   -- Last resort
-  local title = pane_title ~= '' and pane_title or 'wezterm'
+  local title = rest_title ~= '' and rest_title or 'wezterm'
   local cw = utf8_len(title)
   return { { Text = '  ' .. title .. '  ' .. string.rep(' ', math.max(0, max_width - cw - 4)) } }
 end)
+
+config.front_end = "WebGpu"
 
 return config

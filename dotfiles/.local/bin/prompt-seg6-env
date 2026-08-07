@@ -1,16 +1,70 @@
 #!/bin/bash
-# Segment 6 — Clock  (bg: #8872c8 lavender)
+# Segment 6 — Device & Service Status  (bg: #8872c8 lavender)
 #
-# Always outputs: clock +  end-cap + reset
+# Shows Tailscale device online/offline status and service availability.
+# Green icon = online/available, dark icon = offline/unavailable.
+# Always outputs: status icons +  end-cap
 
 # ── Colors ───────────────────────────────────────────────────────────────
 c6_bg='\033[48;2;136;114;200m'   # segment 6 bg  #8872c8
 c6_fg='\033[38;2;136;114;200m'   # segment 6 fg (for end-cap)
-fg='\033[38;2;24;24;24m\033[1m'          # bold near-black
-black='\033[38;2;24;24;24m\033[1m'
+green='\033[38;2;255;255;255m'   # online / available
+off='\033[38;2;40;40;40m'        # offline / unavailable
 reset='\033[0m'
 
+# ── Device icons ──────────────────────────────────────────────────────────
+declare -A DEV_ICONS=(
+  [ts_spa1lnx]=$'\U000F01C5'
+  [ts_pixel]=$'\U0000F10B'
+  [ts_himbeere]=$'\U000F043F'
+  [ts_sadeniemi]=$'\U000F0322'
+  [ts_stratoserver]=$'\U0000EB50'
+)
+
+# ── Service icons ─────────────────────────────────────────────────────────
+declare -A SVC_ICONS=(
+  [svc_tausendsassa]=$'\U000F066F'
+  [svc_roaringbot]=$'\U000F18FB'
+  [svc_website]=$'\U000F059F'
+  [svc_nextcloud]=$'\U0000F0C2'
+)
+
+# ── Guard: only show if status segment is enabled ──────────────────────────
+if [ -z "${STATUS_SEGMENT:-}" ] && [ ! -f ~/.config/status-segment ]; then
+  printf '%b' "${c6_bg} \033[49m${c6_fg}${reset}"
+  exit 0
+fi
+
+# ── Load cached status ────────────────────────────────────────────────────
+eval "$(~/.local/bin/status-cache 2>/dev/null)" 2>/dev/null || true
+
+# ── Build display string ──────────────────────────────────────────────────
+display=""
+
+# Devices
+for v in ts_spa1lnx ts_pixel ts_himbeere ts_sadeniemi ts_stratoserver; do
+  icon="${DEV_ICONS[$v]}"
+  status="${!v:-0}"
+  if [ "$status" = "1" ]; then
+    display+="${green}${icon} "
+  else
+    display+="${off}${icon} "
+  fi
+done
+
+# Gap between devices and services
+display+=" "
+
+# Services
+for v in svc_tausendsassa svc_roaringbot svc_website svc_nextcloud; do
+  icon="${SVC_ICONS[$v]}"
+  status="${!v:-0}"
+  if [ "$status" = "1" ]; then
+    display+="${green}${icon} "
+  else
+    display+="${off}${icon} "
+  fi
+done
+
 # ── Output ────────────────────────────────────────────────────────────────
-printf '%b' "${c6_bg}"
-printf '%b' " ${black}"$'\U000F017'" ${fg}$(date +%H:%M) "   #  clock icon + time
-printf '%b' "\033[49m${c6_fg}${reset}"
+printf '%b' "${c6_bg} ${display}\033[49m${c6_fg}${reset}"

@@ -63,6 +63,7 @@ ITEMS=(
   "starship|dotfiles/.config/starship.toml::dotfiles/.config/starship-local.toml::dotfiles/.local/bin/prompt-seg1-userhost::dotfiles/.local/bin/prompt-seg2-path::dotfiles/.local/bin/prompt-seg3-github::dotfiles/.local/bin/prompt-seg4-git::dotfiles/.local/bin/prompt-seg5-gitstatus::dotfiles/.local/bin/prompt-seg6-env|.config/starship.toml::.config/starship-local.toml::.local/bin/prompt-seg1-userhost::.local/bin/prompt-seg2-path::.local/bin/prompt-seg3-github::.local/bin/prompt-seg4-git::.local/bin/prompt-seg5-gitstatus::.local/bin/prompt-seg6-env|multi"
   "claude-settings|dotfiles/.claude/settings.json::dotfiles/.claude/settings.local.json|.claude/settings.json::.claude/settings.local.json|multi"
   "claude-statusline|dotfiles/.claude/scripts/ds-statusline.sh|.claude/scripts/ds-statusline.sh|copy"
+  "status-segment|dotfiles/.local/bin/status-cache::dotfiles/.config/status-segment|.local/bin/status-cache::.config/status-segment|multi"
   "claude-plugins|dotfiles/.claude/plugins/installed_plugins.json|.claude/plugins/installed_plugins.json|copy"
   "claude-marketplaces|dotfiles/.claude/plugins/known_marketplaces.json|.claude/plugins/known_marketplaces.json|copy"
   "gpaste|https://github.com/spa1teN/GPaste-Reloaded-Cinnamon-Applet.git|.local/share/cinnamon/applets/gpaste-reloaded@feuerfuchs.eu|clone_copy|gpaste-reloaded@feuerfuchs.eu"
@@ -111,6 +112,7 @@ Config files:
   bashrc                     Bash config (Starship, NVM, fzf, ble.sh)
   bash_aliases               Bash aliases with secrets (rendered, mode 600)
   starship                   Starship prompt + git status scripts (SSH + local)
+  status-segment             Device & service status icons in prompt + statusline
 Claude Code:
   claude-settings            Claude Code settings + settings.local
   claude-statusline          Claude Code status line script
