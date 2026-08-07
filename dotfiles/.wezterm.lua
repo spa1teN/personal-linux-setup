@@ -18,7 +18,7 @@ if os.getenv('WAYLAND_DISPLAY') then
 else
   -- X11: fake blur with a pre-blurred background of your wallpaper
   config.window_background_opacity = 1.0
-  config.window_background_image = os.getenv('HOME') .. '/.wezterm/bg4-blurred.jpg'
+  config.window_background_image = os.getenv('HOME') .. '/.wezterm/bg1.jpg'
 end
 
 -- Auto-detect colors from the current GTK theme
@@ -187,6 +187,14 @@ local prog_icons = {
   gcc     = '\u{E77A}', -- nf-cod-terminal_powershell
   ['g++'] = '\u{E77A}',
   ssh     = '\u{F08B9}', -- nf-fa-terminal (user-specified)
+  -- SSH aliases from .bash_aliases
+  stratoserver = '\u{F08B9}',
+  himbeere     = '\u{F08B9}',
+  mainpc       = '\u{F08B9}',
+  laptop       = '\u{F08B9}',
+  smartmatch   = '\u{F08B9}',
+  hpicluster   = '\u{F08B9}',
+  hpiclusterrun = '\u{F08B9}',
   sudo    = '\u{F489}',
   su      = '\u{F489}',
   -- File viewers / pagers
@@ -396,40 +404,37 @@ wezterm.on('format-tab-title', function(tab, tabs, panes, cnf, hover, max_width)
     return { { Text = '  ' .. title .. '  ' .. string.rep(' ', math.max(0, max_width - cw - 4)) } }
   end
 
-  -- Not a path → try foreground process
+  -- Not a path → get foreground process (may help identify aliased commands)
   local get_proc_fn = safe_field(pane, 'get_foreground_process_name')
+  local fg_name = nil
   if get_proc_fn and type(get_proc_fn) == 'function' then
     local proc_ok, proc = pcall(get_proc_fn, pane)
     if proc_ok and proc then
-      local prog_name = (proc:match('[^/]+$') or proc):lower()
-      local icon = prog_icons[prog_name]
-      if icon then
-        local title = icon .. ' ' .. prog_name
-        local cw = utf8_len(title)
-        return { { Text = '  ' .. title .. '  ' .. string.rep(' ', math.max(0, max_width - cw - 4)) } }
-      end
+      fg_name = (proc:match('[^/]+$') or proc):lower()
     end
   end
 
-  -- Not a path → check if pane title starts with a known program → show icon + args
+  -- Not a path → check if we can show a program icon
   local first_word, rest = pane_title:match('^(%w+)%s+(.*)')
   if not first_word then
     first_word = pane_title:match('^(%w+)')
   end
   if first_word then
     local pname = first_word:lower()
-    local icon = prog_icons[pname]
+    -- Icon from pane title first, or from foreground process (catches aliases)
+    local icon = prog_icons[pname] or (fg_name and prog_icons[fg_name])
+    local display_name = icon and (prog_icons[pname] and pname or fg_name) or nil
     if icon then
       -- Programs where filename matters more than program name (editors, pagers)
       local show_file_only = { nvim = true, vim = true, vi = true, emacs = true, nano = true, code = true, less = true }
       local title
-      if show_file_only[pname] and rest and rest ~= '' then
+      if show_file_only[display_name] and rest and rest ~= '' then
         -- Extract basename from the last argument (not the full command-line path)
         local last_arg = rest:match('%S+$') or rest
         local display = last_arg:match('[^/]+$') or last_arg
         title = icon .. ' ' .. display
       else
-        title = icon .. ' ' .. pname
+        title = icon .. ' ' .. display_name
         if rest and rest ~= '' then
           title = title .. ' ' .. rest
         end
@@ -437,6 +442,13 @@ wezterm.on('format-tab-title', function(tab, tabs, panes, cnf, hover, max_width)
       local cw = utf8_len(title)
       return { { Text = '  ' .. title .. '  ' .. string.rep(' ', math.max(0, max_width - cw - 4)) } }
     end
+  end
+
+  -- No icon match, but foreground process has an icon → show it with pane title
+  if fg_name and prog_icons[fg_name] then
+    local title = prog_icons[fg_name] .. ' ' .. pane_title
+    local cw = utf8_len(title)
+    return { { Text = '  ' .. title .. '  ' .. string.rep(' ', math.max(0, max_width - cw - 4)) } }
   end
 
   -- Last resort
