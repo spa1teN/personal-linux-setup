@@ -8,3 +8,4 @@ dotfiles/.bash_aliases
 *.swp
 *.swo
 .DS_Store
+#CLAUDE.md#
