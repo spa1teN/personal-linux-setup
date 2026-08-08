@@ -10,10 +10,9 @@ c1_bg='\033[48;2;170;0;0m'      # segment 1 bg  #aa0000
 c2_bg='\033[48;2;212;112;64m'    # segment 2 bg  #d47040
 c1_fg='\033[38;2;170;0;0m'      # segment 1 fg (for chevrons)
 user_fg='\033[38;2;255;255;255m\033[1m'    # bold white
-host_fg='\033[38;2;180;240;255m\033[1m'    # bold light cyan
-black='\033[38;2;24;24;24m\033[1m'         # near-black for symbols
+host_fg='\033[38;2;255;255;255m\033[1m'    # bold white
+black='\033[38;2;255;255;255m\033[1m'         # white for symbols on dark bg
 white='\033[38;2;255;255;255m\033[1m'      # white for OS logo
-black='\033[38;2;24;24;24m\033[1m'       # near-black for symbols
 
 # ── Data ──────────────────────────────────────────────────────────────────
 user=$(whoami)
@@ -24,7 +23,7 @@ if [ -f /proc/device-tree/model ] && grep -qi 'raspberry pi' /proc/device-tree/m
 elif [ -f /etc/os-release ]; then
     . /etc/os-release 2>/dev/null
     case "${ID,,}" in
-        linuxmint) logo=$'' ;;  #  linux_cinnamon
+        linuxmint) logo=$'\U000F033D' ;;  # 󰼝 nf-md-linux_mint
         ubuntu)    logo=$'\U0000F31B' ;;
         *)         logo=$'\U0000F31A' ;;  # generic tux
     esac

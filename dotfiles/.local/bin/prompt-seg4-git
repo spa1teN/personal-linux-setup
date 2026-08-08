@@ -7,10 +7,10 @@
 c4_bg='\033[48;2;102;204;85m'    # segment 4 bg  #66cc55
 c5_bg='\033[48;2;85;170;221m'    # segment 5 bg  #55aadd
 c4_fg='\033[38;2;102;204;85m'    # segment 4 fg (for chevron)
-branch_fg='\033[38;2;30;75;25m\033[1m'   # bold dark green
-release_fg='\033[38;2;55;90;40m\033[1m'  # bold medium-dark green
-black='\033[38;2;24;24;24m\033[1m'       # near-black for symbol
-branch_icon=$'\U000F062C'                 # 󰘬 nf-md-source_branch
+branch_fg='\033[38;2;0;0;0m\033[1m'   # bold black
+release_fg='\033[38;2;0;0;0m\033[1m'  # bold black
+black='\033[38;2;0;0;0m\033[1m'       # black for symbol
+branch_icon=$'\U0000EA68'                 #  nf-cod-git_branch
 
 # ── Git info ─────────────────────────────────────────────────────────────
 git rev-parse --is-inside-work-tree &>/dev/null || {

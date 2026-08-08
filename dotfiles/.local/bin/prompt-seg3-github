@@ -8,9 +8,9 @@
 c3_bg='\033[48;2;245;194;74m'    # segment 3 bg  #f5c24a
 c4_bg='\033[48;2;102;204;85m'    # segment 4 bg  #66cc55
 c3_fg='\033[38;2;245;194;74m'    # segment 3 fg (for chevron)
-user_fg='\033[38;2;80;60;15m\033[1m'     # bold dark amber
-black='\033[38;2;24;24;24m\033[1m'       # near-black for logo
-gh_logo=$'\U0000EB00'                     #  nf-md-github
+user_fg='\033[38;2;0;0;0m\033[1m'     # bold black
+black='\033[38;2;0;0;0m\033[1m'       # black for logo
+gh_logo=$'\U0000EA84'                     #  nf-md-github
 
 # ── Detect GitHub user ───────────────────────────────────────────────────
 github_user=''

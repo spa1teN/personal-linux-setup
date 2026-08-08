@@ -9,8 +9,8 @@
 c2_bg='\033[48;2;212;112;64m'    # segment 2 bg  #d47040
 c3_bg='\033[48;2;245;194;74m'    # segment 3 bg  #f5c24a
 c2_fg='\033[38;2;212;112;64m'    # segment 2 fg (for chevron)
-path_fg='\033[38;2;24;24;24m\033[1m'     # bold near-black
-black='\033[38;2;24;24;24m\033[1m'       # near-black for "in" prefix
+path_fg='\033[38;2;0;0;0m\033[1m'     # bold black
+black='\033[38;2;0;0;0m\033[1m'       # black for "in" prefix
 
 # ── SSH detection ────────────────────────────────────────────────────────
 sshing=''

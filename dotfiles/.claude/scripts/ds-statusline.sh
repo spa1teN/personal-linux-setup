@@ -63,7 +63,7 @@ if [ -f /proc/device-tree/model ] && grep -qi 'raspberry pi' /proc/device-tree/m
 elif [ -f /etc/os-release ]; then
     . /etc/os-release 2>/dev/null
     case "${ID,,}" in
-        linuxmint) os_logo=$'' ;;  ubuntu) os_logo=$'\U0000F31B' ;;
+        linuxmint) os_logo=$'\U000F033D' ;;  ubuntu) os_logo=$'\U0000F31B' ;;
         *)         os_logo=$'\U0000F31A' ;;
     esac
 else os_logo=$'\U0000F31A'; fi
@@ -154,10 +154,10 @@ fi
 line1+=" ${C2}${c1} "
 is_ssh && line1+="${black} in ${path_fg}${pjoin} " || line1+="${path_fg}${pjoin} "
 line1+=" ${C3}${c2}"
-if [ -n "$github_user" ]; then line1+=" ${black}"$'\U0000EB00'" ${gh_fg}${github_user} "; else line1+=" "; fi
+if [ -n "$github_user" ]; then line1+=" ${black}"$'\U0000EA84'" ${gh_fg}${github_user} "; else line1+=" "; fi
 line1+="${C4}${c3}"
 if [ -n "$branch" ]; then
-    line1+=" ${black}"$'\U000F062C'" ${branch_fg}${branch} "
+    line1+=" ${black}"$'\U0000EA68'" ${branch_fg}${branch} "
     [ -n "$tag" ] && line1+="${release_fg}(${tag}) "
 else line1+=" "; fi
 line1+="${C5}${c4}"

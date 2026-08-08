@@ -54,7 +54,7 @@
 (defun vc-branch ()
   (if (and (boundp 'vc-mode) vc-mode buffer-file-name)
       (let ((backend (vc-backend buffer-file-name)))
-        (propertize (concat "  " (substring vc-mode (+ (if (eq backend 'Hg) 2 3) 2)) " ")
+        (propertize (concat "  " (substring vc-mode (+ (if (eq backend 'Hg) 2 3) 2)) " ")
                     'face 'font-lock-string-face))
     ""))
 

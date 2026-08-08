@@ -7,7 +7,7 @@
 # Seg 5  blue    #55aadd   Git status
 # Seg 6  purple  #8872c8   Clock
 
-format = "$custom$fill$status$line_break$character"
+format = "╭$custom$fill$status$line_break$character"
 
 # ── Segment 1: Username · OS logo · Hostname ─────────────────────────────
 [custom.seg1_userhost]
@@ -59,20 +59,14 @@ ignore_timeout = true
 
 # ── Prompt character ─────────────────────────────────────────────────────
 [character]
-success_symbol = "[❯](bold green)"
-error_symbol = "[❯](bold red)"
+success_symbol = "╰─[❯](bold green)"
+error_symbol = "╰─[❯](bold red)"
 
-# ── Clock (right-aligned, now in segment 6) ──────────────────────────────
-[time]
-disabled = true
-format = "[ $time ](fg:#888888)"
-time_format = "%H:%M"
-
-# ── Fill between prompt and clock ─────────────────────────────────────────
+# ── Fill between prompt and right-aligned content ─────────────────────────
 [fill]
 symbol = " "
 
-# ── Exit status (right side, near clock) ─────────────────────────────────
+# ── Exit status (right-aligned on top line) ───────────────────────────────
 [status]
 format = "[ ✕$status ]($style)"
 style = "bold red"

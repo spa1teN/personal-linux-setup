@@ -8,7 +8,7 @@
 # ── Colors ───────────────────────────────────────────────────────────────
 c6_bg='\033[48;2;136;114;200m'   # segment 6 bg  #8872c8
 c6_fg='\033[38;2;136;114;200m'   # segment 6 fg (for end-cap)
-green='\033[38;2;255;255;255m'   # online / available
+green='\033[38;2;0;0;0m'   # online / available (max contrast on lavender)
 off='\033[38;2;40;40;40m'        # offline / unavailable
 reset='\033[0m'
 
