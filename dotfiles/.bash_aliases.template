@@ -2,7 +2,7 @@ alias stratoserver='ssh root@casparsadenius.de'
 alias himbeere='ssh caspar@himbeere'
 alias mainpc='ssh caspar@spa1lnx'
 alias laptop='ssh caspar@sadeniemi'
-alias nextcloudNCP='docker run -p 127.0.0.1:8000:8000 --rm -e NEXTCLOUD_HOST=https://nextcloud.casparsadenius.de -e NEXTCLOUD_USERNAME=spa1teN -e NEXTCLOUD_PASSWORD={{NEXTCLOUD_PASSWORD}} ghcr.io/cbcoutinho/nextcloud-mcp-server:latest'
+alias nextcloudMCP='docker run -p 127.0.0.1:8000:8000 --rm -e NEXTCLOUD_HOST=https://nextcloud.casparsadenius.de -e NEXTCLOUD_USERNAME=spa1teN -e NEXTCLOUD_PASSWORD={{NEXTCLOUD_PASSWORD}} ghcr.io/cbcoutinho/nextcloud-mcp-server:latest'
 
 alias smartmatch='ssh smartmatch@172.18.17.86'
 alias hpivpn='cd && ./.snx-connect'

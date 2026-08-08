@@ -245,6 +245,8 @@ local prog_icons = {
   curl   = '\u{F19D0}',
   sftp   = '\u{EAE9}',
   scp    = '\u{EAE9}',
+  -- nextcloud MCP
+  nextcloudmcp    = '\u{F0EC}',
 }
 
 -- Device icons for Tailscale hosts (shown after SSH icon in tab titles)

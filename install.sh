@@ -66,6 +66,7 @@ ITEMS=(
   "status-segment|dotfiles/.local/bin/status-cache::dotfiles/.config/status-segment|.local/bin/status-cache::.config/status-segment|multi"
   "claude-plugins|dotfiles/.claude/plugins/installed_plugins.json|.claude/plugins/installed_plugins.json|copy"
   "claude-marketplaces|dotfiles/.claude/plugins/known_marketplaces.json|.claude/plugins/known_marketplaces.json|copy"
+  "emacs|dotfiles/.emacs::dotfiles/.emacs.d/themes|.emacs::.emacs.d/themes|multi"
   "gpaste|https://github.com/spa1teN/GPaste-Reloaded-Cinnamon-Applet.git|.local/share/cinnamon/applets/gpaste-reloaded@feuerfuchs.eu|clone_copy|gpaste-reloaded@feuerfuchs.eu"
   "tailscale-tray|$HOME/Projects/tailscale-systray-fork|.local/bin/tailscale-systray|binary_build"
   "headset-battery|dotfiles/headset-battery|.local/share/cinnamon/applets/headset-battery@caspar|headset_battery"
@@ -118,6 +119,8 @@ Claude Code:
   claude-statusline          Claude Code status line script
   claude-plugins             Claude Code installed plugins
   claude-marketplaces        Claude Code known marketplaces
+Editor:
+  emacs                      Emacs config + Nord theme (mode-line, VC branch, GUI chrome disabled)
 Tray:
   gpaste                     GPaste-Reloaded Cinnamon applet (custom fork)
   headset-battery            Headset battery tray (Cinnamon + GNOME)
@@ -464,6 +467,16 @@ install_deps() {
         warn "tailscale not running — operator check skipped"
       fi
       _DEPS_DONE[tailscale-tray]=1
+      ;;
+    emacs)
+      if command -v emacs &>/dev/null; then
+        log "already installed: emacs ($(emacs --version 2>/dev/null | head -1))"
+      elif command -v emacs-nox &>/dev/null; then
+        log "already installed: emacs-nox"
+      else
+        _apt_install emacs
+      fi
+      _DEPS_DONE[emacs]=1
       ;;
   esac
 
