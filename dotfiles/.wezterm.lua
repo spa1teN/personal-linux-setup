@@ -45,8 +45,16 @@ local function adjust_hex(hex, amount)
   local b = math.min(255, math.max(0, tonumber(hex:sub(6,7), 16) + amount))
   return string.format('#%02x%02x%02x', r, g, b)
 end
-local SURFACE = gtk_theme_color('insensitive_base_color') or adjust_hex(BG, 13)
+-- Active tab: mid-gray, clearly lighter than the dark background
+local SURFACE = '#4a4a4a'
+-- Always use light text on the active tab — selection fg is often dark (for
+-- highlighted list rows) and doesn't read well on the tab bar.
+local ACTIVE_FG = FG
+-- Inactive tabs: pushed darker so they visually recede from the active tab
+local INACTIVE_BG = adjust_hex(BG, -15)
 local INACTIVE = adjust_hex(BG, 4)
+local INACTIVE_HOVER = adjust_hex(BG, 15)
+local INACTIVE_EDGE = adjust_hex(BG, 8)
 local MUTED = gtk_theme_color('insensitive_fg_color')
 if not MUTED or MUTED:match('rgba') then MUTED = '#8c8c8c' end
 
@@ -65,11 +73,12 @@ config.colors = {
   background = BG,
   tab_bar = {
     background = BG,
-    active_tab = { bg_color = SURFACE, fg_color = FG },
-    inactive_tab = { bg_color = BG, fg_color = MUTED },
-    inactive_tab_hover = { bg_color = INACTIVE, fg_color = FG },
-    new_tab = { bg_color = BG, fg_color = MUTED },
-    new_tab_hover = { bg_color = INACTIVE, fg_color = FG },
+    active_tab = { bg_color = SURFACE, fg_color = ACTIVE_FG, intensity = "Bold" },
+    inactive_tab = { bg_color = INACTIVE_BG, fg_color = MUTED, intensity = "Half" },
+    inactive_tab_hover = { bg_color = INACTIVE_HOVER, fg_color = FG },
+    inactive_tab_edge = INACTIVE_EDGE,
+    new_tab = { bg_color = INACTIVE_BG, fg_color = MUTED },
+    new_tab_hover = { bg_color = INACTIVE_HOVER, fg_color = FG },
   },
 }
 
