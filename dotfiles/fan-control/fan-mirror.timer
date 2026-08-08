@@ -1,9 +1,0 @@
-[Unit]
-Description=Fan mirror timer
-
-[Timer]
-OnBootSec=5s
-OnUnitActiveSec=2s
-
-[Install]
-WantedBy=timers.target

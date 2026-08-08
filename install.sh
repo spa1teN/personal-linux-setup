@@ -53,7 +53,6 @@ _state_remove() { _state_load; unset '_STATE_ACTIVE[$1]'; _state_save; }
 #       clone_copy   = clone repo from URL, copy subdir to target
 #       binary_build = build from local source dir, copy binary + autostart to $HOME
 #       headset_battery = headset battery tray (Cinnamon applet + GNOME extension)
-#       fan_control  = fan control scripts + systemd units (requires sudo)
 #       amdgpu_fix   = add amdgpu.dcdebugmask=0x12 kernel param to GRUB (requires sudo)
 ITEMS=(
   "wezterm|dotfiles/.wezterm.lua::dotfiles/.wezterm|.wezterm.lua::.wezterm|multi"
@@ -63,14 +62,12 @@ ITEMS=(
   "starship|dotfiles/.config/starship.toml::dotfiles/.config/starship-local.toml::dotfiles/.local/bin/prompt-seg1-userhost::dotfiles/.local/bin/prompt-seg2-path::dotfiles/.local/bin/prompt-seg3-github::dotfiles/.local/bin/prompt-seg4-git::dotfiles/.local/bin/prompt-seg5-gitstatus::dotfiles/.local/bin/prompt-seg6-env|.config/starship.toml::.config/starship-local.toml::.local/bin/prompt-seg1-userhost::.local/bin/prompt-seg2-path::.local/bin/prompt-seg3-github::.local/bin/prompt-seg4-git::.local/bin/prompt-seg5-gitstatus::.local/bin/prompt-seg6-env|multi"
   "claude-settings|dotfiles/.claude/settings.json::dotfiles/.claude/settings.local.json|.claude/settings.json::.claude/settings.local.json|multi"
   "claude-statusline|dotfiles/.claude/scripts/ds-statusline.sh|.claude/scripts/ds-statusline.sh|copy"
-  "status-segment|dotfiles/.local/bin/status-cache::dotfiles/.config/status-segment|.local/bin/status-cache::.config/status-segment|multi"
   "claude-plugins|dotfiles/.claude/plugins/installed_plugins.json|.claude/plugins/installed_plugins.json|copy"
   "claude-marketplaces|dotfiles/.claude/plugins/known_marketplaces.json|.claude/plugins/known_marketplaces.json|copy"
   "emacs|dotfiles/.emacs::dotfiles/.emacs.d/themes|.emacs::.emacs.d/themes|multi"
   "gpaste|https://github.com/spa1teN/GPaste-Reloaded-Cinnamon-Applet.git|.local/share/cinnamon/applets/gpaste-reloaded@feuerfuchs.eu|clone_copy|gpaste-reloaded@feuerfuchs.eu"
   "tailscale-tray|$HOME/Projects/tailscale-systray-fork|.local/bin/tailscale-systray|binary_build"
   "headset-battery|dotfiles/headset-battery|.local/share/cinnamon/applets/headset-battery@caspar|headset_battery"
-  "fan-control|dotfiles/fan-control|fan-control|fan_control"
   "amdgpu-fix|/etc/default/grub|/etc/default/grub|amdgpu_fix"
 )
 
@@ -113,7 +110,6 @@ Config files:
   bashrc                     Bash config (Starship, NVM, fzf, ble.sh)
   bash_aliases               Bash aliases with secrets (rendered, mode 600)
   starship                   Starship prompt + git status scripts (SSH + local)
-  status-segment             Device & service status icons in prompt + statusline
 Claude Code:
   claude-settings            Claude Code settings + settings.local
   claude-statusline          Claude Code status line script
@@ -128,7 +124,6 @@ EOF
   printf '  %b%-26s%b %s\n' "$CYAN" "tailscale-tray" "$NC" "Tailscale systray (custom fork, built from source)"
   cat <<'EOF'
 Hardware specific:
-  fan-control                MSI B550 fan quiet setup (requires sudo)
   amdgpu-fix                 AMD GPU freeze fix — adds amdgpu.dcdebugmask=0x12 to GRUB
 EOF
 }
@@ -427,15 +422,6 @@ install_deps() {
         fi
       fi
       _DEPS_DONE[headset-battery]=1
-      ;;
-    fan-control)
-      if lsmod | grep -q nct6687; then
-        log "nct6687 module loaded"
-      else
-        warn "nct6687 module not loaded — fan control won't work"
-        info "DKMS driver: https://github.com/Fred78290/nct6687d"
-      fi
-      _DEPS_DONE[fan-control]=1
       ;;
     amdgpu-fix)
       if lsmod | grep -q amdgpu; then
@@ -759,70 +745,6 @@ install_headset_battery() {
 }
 
 # ==============================================================================
-# Install fan control scripts and systemd units (requires sudo)
-# $1 = source dir in repo (dotfiles/fan-control)
-# ==============================================================================
-install_fan_control() {
-  local src="$REPO_DIR/$1"
-
-  if [[ ! -d "$src" ]]; then
-    error "Source not found: $src"
-    return 1
-  fi
-
-  if [[ $EUID -ne 0 ]]; then
-    warn "fan-control needs sudo to install system files"
-  fi
-
-  local installed=0
-
-  # Scripts to /usr/local/bin/
-  for script in fan-quiet.sh fan-mirror.sh; do
-    if cmp -s "$src/$script" "/usr/local/bin/$script" 2>/dev/null; then
-      log "already up to date: /usr/local/bin/$script"
-    else
-      sudo cp "$src/$script" "/usr/local/bin/$script"
-      sudo chmod 755 "/usr/local/bin/$script"
-      log "installed /usr/local/bin/$script"
-      installed=1
-    fi
-  done
-
-  # Systemd units
-  for unit in fan-quiet.service fan-mirror.service fan-mirror.timer; do
-    if cmp -s "$src/$unit" "/etc/systemd/system/$unit" 2>/dev/null; then
-      log "already up to date: /etc/systemd/system/$unit"
-    else
-      sudo cp "$src/$unit" "/etc/systemd/system/$unit"
-      log "installed /etc/systemd/system/$unit"
-      installed=1
-    fi
-  done
-
-  # Enable and start the timer
-  if ! systemctl is-enabled fan-mirror.timer &>/dev/null; then
-    sudo systemctl enable --now fan-mirror.timer 2>/dev/null && \
-      log "enabled fan-mirror.timer" || warn "failed to enable fan-mirror.timer"
-    installed=1
-  else
-    log "fan-mirror.timer already enabled"
-  fi
-
-  if ! systemctl is-enabled fan-quiet.service &>/dev/null; then
-    sudo systemctl enable fan-quiet.service 2>/dev/null && \
-      log "enabled fan-quiet.service" || warn "failed to enable fan-quiet.service"
-  else
-    log "fan-quiet.service already enabled"
-  fi
-
-  if [[ $installed -gt 0 ]]; then
-    ((INSTALLED++)) || true
-  else
-    ((SKIPPED++)) || true
-  fi
-}
-
-# ==============================================================================
 # Install amdgpu freeze fix — add amdgpu.dcdebugmask=0x12 to GRUB
 # $1 = not used (source is /etc/default/grub, resolved from ITEMS)
 # ==============================================================================
@@ -940,9 +862,6 @@ install_item() {
         ;;
       headset_battery)
         install_headset_battery "$_src"
-        ;;
-      fan_control)
-        install_fan_control "$_src"
         ;;
       amdgpu_fix)
         install_amdgpu_fix
@@ -1075,29 +994,6 @@ remove_item() {
         else
           info "not installed: $param not found in $grub_file"
         fi
-        ;;
-      fan_control)
-        warn "fan-control uses system files — uninstall stops timer but keeps files"
-        warn "Use './install.sh --set fan-control' first if you want to save changes"
-        if systemctl is-enabled fan-mirror.timer &>/dev/null; then
-          sudo systemctl disable --now fan-mirror.timer 2>/dev/null && \
-            log "disabled fan-mirror.timer" || warn "failed to disable fan-mirror.timer"
-        fi
-        if systemctl is-enabled fan-quiet.service &>/dev/null; then
-          sudo systemctl disable fan-quiet.service 2>/dev/null && \
-            log "disabled fan-quiet.service" || warn "failed to disable fan-quiet.service"
-        fi
-        # Remove system files
-        for f in /usr/local/bin/fan-quiet.sh /usr/local/bin/fan-mirror.sh \
-                 /etc/systemd/system/fan-quiet.service /etc/systemd/system/fan-mirror.service \
-                 /etc/systemd/system/fan-mirror.timer; do
-          if [[ -f "$f" ]]; then
-            sudo rm "$f"
-            log "removed $f"
-          fi
-        done
-        sudo systemctl daemon-reload 2>/dev/null || true
-        ((UNINSTALLED++)) || true
         ;;
       *)
         error "Unknown kind '$_kind' for $name"
@@ -1253,15 +1149,6 @@ list_items() {
           status="not installed"
         fi
         ;;
-      fan_control)
-        if [[ -f /usr/local/bin/fan-quiet.sh ]] && systemctl is-enabled fan-mirror.timer &>/dev/null; then
-          status="installed"
-        elif [[ -f /usr/local/bin/fan-quiet.sh ]]; then
-          status="scripts present (timer not enabled)"
-        else
-          status="not installed"
-        fi
-        ;;
       amdgpu_fix)
         if grep -q "^GRUB_CMDLINE_LINUX_DEFAULT=.*amdgpu.dcdebugmask=0x12" /etc/default/grub 2>/dev/null; then
           status="applied"
@@ -1360,22 +1247,6 @@ set_item() {
           error "Nothing to store — headset-battery not installed"
           return 1
         fi
-        ;;
-      fan_control)
-        local src="$REPO_DIR/$_src"
-        if [[ ! -f /usr/local/bin/fan-quiet.sh ]]; then
-          error "Nothing to store — fan-control not installed"
-          return 1
-        fi
-        mkdir -p "$src"
-        for f in fan-quiet.sh fan-mirror.sh; do
-          sudo cp "/usr/local/bin/$f" "$src/$f"
-          log "stored /usr/local/bin/$f → dotfiles/fan-control/"
-        done
-        for f in fan-quiet.service fan-mirror.service fan-mirror.timer; do
-          sudo cp "/etc/systemd/system/$f" "$src/$f"
-          log "stored /etc/systemd/system/$f → dotfiles/fan-control/"
-        done
         ;;
       clone_copy)
         error "Cannot store '$name' — config is cloned from git, not stored in repo"
@@ -1616,7 +1487,7 @@ main() {
           continue
         fi
         case "$_name" in
-          gpaste|headset-battery|tailscale-tray|fan-control|amdgpu-fix)
+          gpaste|headset-battery|tailscale-tray|amdgpu-fix)
             continue ;;
         esac
         info "checking $_name..."

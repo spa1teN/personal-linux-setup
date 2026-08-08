@@ -34,28 +34,6 @@ defbg=$'\033[49m'   # default background
 is_ssh() { [ -n "$SSH_CONNECTION" ] || [ -n "$SSH_TTY" ]; }
 is_root() { [ "$(id -u)" -eq 0 ]; }
 
-	# ── Device & service status (only if enabled) ────────────────────────────────
-	_status_enabled=0
-	if [ -n "${STATUS_SEGMENT:-}" ] || [ -f ~/.config/status-segment ]; then
-	  _status_enabled=1
-	  eval "$(~/.local/bin/status-cache 2>/dev/null)" 2>/dev/null || true
-	  green=$'\033[38;2;255;255;255m'
-	  off=$'\033[38;2;40;40;40m'
-
-	  # Device icons
-	  d_spa1lnx=$'\U000F01C5' d_pixel=$'\U0000F10B' d_himbeere=$'\U000F043F'
-	  d_sadeniemi=$'\U000F0322' d_stratoserver=$'\U0000EB50'
-
-	  # Service icons
-	  s_tausendsassa=$'\U000F066F' s_roaringbot=$'\U000F18FB'
-	  s_website=$'\U000F059F' s_nextcloud=$'\U0000F0C2'
-
-	  _status_icon() {
-	    local status="${!1:-0}" icon="$2"
-	    if [ "$status" = "1" ]; then printf '%b' "${green}${icon}"
-	    else printf '%b' "${off}${icon}"; fi
-	  }
-	fi
 
 # ── OS logo ─────────────────────────────────────────────────────────────
 if [ -f /proc/device-tree/model ] && grep -qi 'raspberry pi' /proc/device-tree/model 2>/dev/null; then
@@ -168,11 +146,7 @@ elif [ -n "$git_state" ]; then
     line1+="${state_fg} [${git_state}] "
 else line1+=" "; fi
 line1+="${C6}${c5}"
-if [ "$_status_enabled" = "1" ]; then
-  line1+=" $(_status_icon ts_spa1lnx "$d_spa1lnx") $(_status_icon ts_pixel "$d_pixel") $(_status_icon ts_himbeere "$d_himbeere") $(_status_icon ts_sadeniemi "$d_sadeniemi") $(_status_icon ts_stratoserver "$d_stratoserver")  $(_status_icon svc_tausendsassa "$s_tausendsassa") $(_status_icon svc_roaringbot "$s_roaringbot") $(_status_icon svc_website "$s_website") $(_status_icon svc_nextcloud "$s_nextcloud") "
-else
-  line1+=" "
-fi
+line1+=" "
 line1+="${defbg}${c6}${reset}"
 
 # --- Model name ---

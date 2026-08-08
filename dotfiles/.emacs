@@ -59,6 +59,14 @@
     ""))
 
 ;; 2. Reconstruct the modeline structure to use our changes
+
+;; Remove dash padding from percentage (the (-3 "%p") default).
+(setq-default mode-line-percent-position '("%p"))
+
+;; Replace front/end dashes with plain spaces.
+(setq-default mode-line-front-space " ")
+(setq-default mode-line-end-spaces " ")
+
 (setq-default mode-line-format
   '(
     ;; Left side info
