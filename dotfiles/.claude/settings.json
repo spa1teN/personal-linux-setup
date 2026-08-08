@@ -3,7 +3,7 @@
     "EDITOR": "emacs -nw"
   },
   "permissions": {
-    "defaultMode": "auto"
+    "defaultMode": "default"
   },
   "model": "opus",
   "statusLine": {
