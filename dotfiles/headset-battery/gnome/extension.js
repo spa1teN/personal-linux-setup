@@ -10,7 +10,15 @@ import * as PopupMenu from 'resource:///org/gnome/shell/ui/popupMenu.js';
 import { Extension } from 'resource:///org/gnome/shell/extensions/extension.js';
 
 const POLL_SECONDS = 60;
-const HEADSETCONTROL_PATH = '/usr/local/bin/headsetcontrol';
+// apt installs to /usr/bin, source builds to /usr/local/bin; probe both since
+// gnome-shell has a minimal PATH.
+const HEADSETCONTROL_PATH = (() => {
+    for (const p of ['/usr/local/bin/headsetcontrol', '/usr/bin/headsetcontrol']) {
+        if (GLib.file_test(p, GLib.FileTest.IS_EXECUTABLE))
+            return p;
+    }
+    return GLib.find_program_in_path('headsetcontrol');
+})();
 const ICON_SIZE = 20;
 
 // Known Bluetooth headset

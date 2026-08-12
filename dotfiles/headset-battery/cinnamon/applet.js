@@ -5,7 +5,17 @@ const PopupMenu = imports.ui.popupMenu;
 const Mainloop = imports.mainloop;
 
 const POLL_SECONDS = 60;
-const HEADSETCONTROL_PATH = '/usr/local/bin/headsetcontrol';
+// apt installs to /usr/bin, source builds to /usr/local/bin; probe both since
+// the shell has a minimal PATH.
+function _resolveHeadsetcontrolPath() {
+    let candidates = ['/usr/local/bin/headsetcontrol', '/usr/bin/headsetcontrol'];
+    for (let i = 0; i < candidates.length; i++) {
+        if (GLib.file_test(candidates[i], GLib.FileTest.IS_EXECUTABLE))
+            return candidates[i];
+    }
+    return GLib.find_program_in_path('headsetcontrol');
+}
+const HEADSETCONTROL_PATH = _resolveHeadsetcontrolPath();
 
 // Known Bluetooth headset
 const BT_ADDRESS = '2C:41:A1:4E:F8:9D';

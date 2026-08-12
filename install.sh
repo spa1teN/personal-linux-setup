@@ -399,7 +399,7 @@ install_deps() {
       _DEPS_DONE[gpaste]=1
       ;;
     headset-battery)
-      if [[ -f /usr/local/bin/headsetcontrol ]] || command -v headsetcontrol &>/dev/null; then
+      if command -v headsetcontrol &>/dev/null; then
         log "already installed: headsetcontrol"
       else
         info "installing headsetcontrol..."

@@ -34,11 +34,13 @@ Each directory contains:
 
 | Tool             | Path / package        | Purpose                              |
 | ---------------- | --------------------- | ------------------------------------ |
-| `headsetcontrol` | `/usr/local/bin/headsetcontrol` | Battery level from USB HID headsets |
+| `headsetcontrol` | `/usr/bin/headsetcontrol` (apt) | Battery level from USB HID headsets |
 | BlueZ            | system D-Bus          | Battery level from Bluetooth headsets |
 
-`headsetcontrol` built from [Sapd/HeadsetControl](https://github.com/Sapd/HeadsetControl)
-(version `continuous-52-gfe086cd`, API 1.4).
+`headsetcontrol` is installed via apt (package version `4.0.0-1`, API 1.4).
+The indicator probes both `/usr/local/bin` (source builds) and `/usr/bin`
+(apt) before falling back to `PATH`. Built from
+[Sapd/HeadsetControl](https://github.com/Sapd/HeadsetControl).
 
 ## Indicator states
 
@@ -109,7 +111,7 @@ org.freedesktop.DBus.Properties.Get("org.bluez.Battery1", "Percentage")
 ```json
 {
   "name": "HeadsetControl",
-  "version": "continuous-52-gfe086cd",
+  "version": "0.0.0-unknown",
   "api_version": "1.4",
   "device_count": 1,
   "devices": [
